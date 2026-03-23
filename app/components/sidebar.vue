@@ -1,6 +1,7 @@
 <script setup>
-
 import Switch from './switch.vue';
+import { useBoardStore } from '~/stores/board'
+const boardStore = useBoardStore()
 
 const DarkModeEnabled = ref(false)
 
@@ -27,25 +28,25 @@ function HideSidebar() {
   emit('update:hidden', true)
 }
 
+
+
 </script>
 <template>
   <section class="sidebar" :class="{ hidden: props.hidden }">
     <div class="content">
 
-      <h3 class="all-boards">ALL BOARDS (0)</h3>
-      <div class="boards-name">
-        <h3 class="board-item active">
-          <IconBoardIcon />
-          <p class="board-name">Platform Launch</p>
-        </h3>
-        <h3 class="board-item">
-          <IconBoardIcon />
-          <p class="board-name">Marketing Plan</p>
-        </h3>
-        <h3 class="board-item">
-          <IconBoardIcon />
-          <p class="board-name">Roadmap</p>
-        </h3>
+      <h3 class="all-boards">ALL BOARDS ({{ boardStore.boards.length }})</h3>
+      <div class="boards-name" v-if="boardStore.boards && boardStore.boards.length > 0">
+
+        <div v-for="board in boardStore.boards" :key="board.id">
+
+            <h3 class="board-item" :class="{ active: boardStore.selectedBoard?.name === board.name }" @click="boardStore.selectBoard(board)">
+              <IconBoardIcon />
+              <p class="board-name" v-if="board && board.name">{{ board.name }}</p>
+            </h3>
+        </div>
+          
+
 
         <div class="board-item create-board">
           <IconBoardIcon />
@@ -72,7 +73,9 @@ function HideSidebar() {
 
 <style scoped>
 .sidebar {
+  
   width: 300px;
+  flex: 0 0 300px;
   background-color: var(--card-topbar-sidebar);
   height: calc(100vh - 75px);
   border-right: 1px solid var(--bg);
@@ -80,22 +83,32 @@ function HideSidebar() {
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
-  transition: width 0.2s ease;
+  transition: width 0.2s ease, flex-basis 0.2s ease;
 }
 
 .sidebar.hidden {
   width: 0;
+  flex-basis: 0;
   border-right: 0;
   pointer-events: none;
 }
 
+.content {
+  display: flex;
+  flex-direction: column;
+}
 
-
-.sidebar .content .all-boards {
+.all-boards {
   color: var(--muted);
   font-size: 1.2em;
   font-weight: bold;
-  margin-left: 45px;
+  margin: 20px 0 10px 45px;
+}
+
+.boards-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .board-item {
@@ -103,69 +116,55 @@ function HideSidebar() {
   padding: 10px 0 10px 45px;
   display: flex;
   align-items: center;
+  gap: 10px;
   max-width: 275px;
   border-bottom-right-radius: 50px;
   border-top-right-radius: 50px;
   height: 48px;
   margin: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.board-name {
+  margin: 0;
 }
 
 .board-item svg {
+  flex-shrink: 0;
   margin-top: 10px;
 }
 
-.board-item .board-name {
-  margin-left: 10px;
-  display: inline-block;
-}
-
-
-.board-item:hover {
+.board-item:not(.active):hover {
   background-color: #9797971a;
   color: var(--primary);
   cursor: pointer;
 }
 
-html.dark .board-item:hover {
+html.dark .board-item:not(.active):hover {
   background-color: white;
   color: var(--primary);
-  cursor: pointer;
 }
 
-.board-item.active,
-html.dark .board-item.active {
+.board-item.active {
   background-color: var(--primary);
   color: white;
-  cursor: pointer;
-}
-
-.board-item img svg path {
-  fill: var(--muted);
-}
-
-.board-item.create-board .board-name {
-  display: flex;
-  align-items: center;
 }
 
 .create-board {
   color: var(--primary);
 }
 
-
-
-.board-item:hover img svg path {
-  fill: var(--bg);
+.create-board .board-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-
-
-/* ================ Controls ================= */
 .controls {
   margin-bottom: 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .theme-controls {
@@ -174,25 +173,23 @@ html.dark .board-item.active {
   justify-content: center;
   gap: 20px;
   height: 48px;
-  margin-left: 45px;
-  margin-right: 45px;
+  margin: 0 45px;
   border-radius: 5px;
   padding: 10px;
   background-color: var(--bg);
 }
 
 .theme-controls svg {
-  margin-top: 5px;
+  flex-shrink: 0;
+  margin-top: 10px;
 }
-
-.theme-toggle-btn {}
 
 .toggle-sidebar {
   display: flex;
   align-items: center;
   gap: 10px;
   color: var(--muted);
-  background-color: transparent;
+  background: transparent;
   border: none;
   font-weight: bold;
   max-width: 275px;
@@ -209,6 +206,7 @@ html.dark .board-item.active {
 }
 
 .toggle-sidebar svg {
+  flex-shrink: 0;
   margin-top: 15px;
 }
 </style>

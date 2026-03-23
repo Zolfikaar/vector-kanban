@@ -1,13 +1,24 @@
 <script setup>
-
+import { useBoardStore } from './stores/board';
+const boardStore = useBoardStore()
 
 const isSidebarHidden = ref(false)
-
-
 
 function showSidebar() {
   isSidebarHidden.value = false
 }
+
+let boards = ref([]);
+
+onMounted(async () => {
+  await useBoardStore().loadBoards();
+  boards.value = boardStore.boards;
+  if (boardStore.boards.length) {
+  boardStore.selectBoard(boardStore.boards[0])
+}
+})
+
+
 
 
 </script>
@@ -29,9 +40,9 @@ function showSidebar() {
           </div>
 
           <div class="main-content">
-
-            <h1>Main Area</h1>
+            <Home />
           </div>
+
         </section>
 
       </section>
@@ -41,9 +52,18 @@ function showSidebar() {
 </template>
 
 <style scoped>
-.content-shell {
-  min-height: calc(100vh - 75px);
+
+.app-shell {
+  height: 100vh;
   display: flex;
+  flex-direction: column;
+}
+
+.content-shell {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  width: 100%;
 }
 
 .main-area {
@@ -66,6 +86,7 @@ function showSidebar() {
   bottom: 20px;
   background-color: var(--primary);
   color: white;
+  z-index: 2;
 }
 
 .show-sidebar:hover {
@@ -74,6 +95,8 @@ function showSidebar() {
 }
 
 .main-content {
-  padding: 1em;
+  width: 100%;
+  height: 100%;
 }
+
 </style>

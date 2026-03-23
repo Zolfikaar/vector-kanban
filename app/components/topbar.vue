@@ -1,30 +1,81 @@
 <script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useBoardStore } from '~/stores/board'
+import { storeToRefs } from 'pinia'
+
+const boardStore = useBoardStore()
+const { selectedBoard } = storeToRefs(boardStore)
+
 const props = defineProps({
   hidden: {
     type: Boolean,
     default: false
   }
 })
+
+const showDetailsBox = ref(false)
+const dropdown = ref(null)
+
+function ToggleShowMoreBtn() {
+  showDetailsBox.value = !showDetailsBox.value
+}
+
+function handleClickOutside(event) {
+  if (dropdown.value && !dropdown.value.contains(event.target)) {
+    showDetailsBox.value = false
+  }
+}
+
+const topbarRef = ref(null)
+
+onMounted(() => {
+  document.addEventListener('click', (e) => {
+    if (topbarRef.value && !topbarRef.value.contains(e.target)) {
+      showDetailsBox.value = false
+    }
+  })
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
+
 </script>
 
 <template>
-  <div class="topbar">
+  <div class="topbar" ref="topbarRef">
+
     <div class="logo" :class="hidden ? 'shrinked' : ''">
       <LogoIcon class="logo-icon" />
     </div>
 
     <div class="main">
-      <h1 class="board-name">My Board</h1>
-      <div class="action-btns ">
+      <h1 class="board-name">{{ selectedBoard?.name }}</h1>
+
+      <div class="action-btns">
+
         <button class="btn-primary">
           <IconAddTaskMobileIcon width="20" height="20" />
           Add New Task
         </button>
-        <button class="show-more">
-          <IconVerticalEllipsisIcon width="" />
-        </button>
+
+        <div class="dropdown" ref="dropdown">
+
+          <button class="show-more" @click="ToggleShowMoreBtn">
+            <IconVerticalEllipsisIcon />
+          </button>
+
+          <div v-if="showDetailsBox" class="details-box">
+            <span class="edit">Edit Board</span>
+            <span class="delete">Delete Board</span>
+          </div>
+
+        </div>
+
       </div>
     </div>
+
   </div>
 </template>
 
@@ -35,6 +86,7 @@ const props = defineProps({
   height: 75px;
   display: flex;
   align-items: center;
+  position: relative;
 }
 
 .logo {
@@ -67,6 +119,52 @@ const props = defineProps({
 .board-name {
   font-size: 1.25em;
   font-weight: bold;
+}
 
+.details-box {
+  position: absolute;
+  top: 75px;
+  right: 20px;
+  padding: 10px;
+  width: 195px;
+  height: 95px;
+  background-color: var(--card-topbar-sidebar);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+
+  /* تم حذف display:none حتى يشتغل v-if */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+
+  z-index: 10;
+}
+
+.details-box span {
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.details-box span:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+.details-box .edit {
+  color: var(--muted);
+}
+
+.details-box .delete {
+  color: var(--danger);
+}
+
+.details-box .edit:hover {
+  color: var(--primary);
+}
+
+.details-box .delete:hover {
+  color: var(--danger-hover);
 }
 </style>

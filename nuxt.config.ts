@@ -10,7 +10,9 @@ export default defineNuxtConfig({
       pathPrefix: false
     }
   ],
+
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   css: ['~/assets/main.css'],
+  modules: ['@pinia/nuxt'],
 })
