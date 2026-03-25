@@ -53,7 +53,7 @@ onUnmounted(() => {
     <div class="main">
       <h1 class="board-name">{{ selectedBoard?.name }}</h1>
 
-      <div class="action-btns">
+      <div class="action-btns" :class="selectedBoard == null ? 'inactive' : ''">
 
         <button class="btn-primary">
           <IconAddTaskMobileIcon width="20" height="20" />

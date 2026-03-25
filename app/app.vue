@@ -8,14 +8,16 @@ function showSidebar() {
   isSidebarHidden.value = false
 }
 
-let boards = ref([]);
 
 onMounted(async () => {
   await useBoardStore().loadBoards();
-  boards.value = boardStore.boards;
   if (boardStore.boards.length) {
-  boardStore.selectBoard(boardStore.boards[0])
-}
+
+    if(boardStore.selectBoard === null){
+      boardStore.selectBoard(boardStore.boards[0])
+    }
+
+  }
 })
 
 
@@ -52,7 +54,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-
 .app-shell {
   height: 100vh;
   display: flex;
@@ -68,6 +69,8 @@ onMounted(async () => {
 
 .main-area {
   flex: 1;
+  /* Allow this flex item to shrink so horizontal overflow can be scrollable. */
+  min-width: 0;
   background-color: var(--bg);
   border-radius: 8px;
   position: relative;
@@ -97,6 +100,7 @@ onMounted(async () => {
 .main-content {
   width: 100%;
   height: 100%;
+  min-width: 0;
+  overflow: auto;
 }
-
 </style>

@@ -16,7 +16,7 @@ export const useBoardStore = defineStore('board', {
         const response = await fetch(url)
         const data = await response.json()
 
-        this.boards = data.boards       
+        this.boards = data.boards      
         
       } catch (error) {
         console.error(error)

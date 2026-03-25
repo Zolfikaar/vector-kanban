@@ -13,23 +13,22 @@ const { selectedBoard } = storeToRefs(boardStore)
 
   <div class="home">
 
-    <div
-      class="columns"
-      v-if="selectedBoard?.columns && selectedBoard.columns?.length > 0"
-    >
-      <Column
-        v-for="column in selectedBoard.columns"
-        :key="column.id"
-        :column="column"
-        @open-task-modal="$emit('open-task-modal', column.id)"
-      />
+    <div class="no-selected-board" v-if="selectedBoard == null">
+      <p>
+        There is no board selected, please select one from the sidebar
+      </p>
+    </div>
+
+    <div class="columns" v-else-if="selectedBoard?.columns && selectedBoard.columns?.length > 0">
+      <Column v-for="column in selectedBoard.columns" :key="column.id" :column="column"
+        @open-task-modal="$emit('open-task-modal', column.id)" />
 
       <div class="add-column">
-       
+
         <p>
           + Add New Column
         </p>
-        
+
       </div>
     </div>
 
@@ -45,22 +44,37 @@ const { selectedBoard } = storeToRefs(boardStore)
 </template>
 
 <style scoped>
-
 .home {
   height: 100%;
   width: 100%;
+  min-width: 100%;
   padding: 20px;
-  overflow: auto;
+  /* Let the outer `.main-content` scroll handle both axes. */
+  overflow: visible;
 }
-
+.no-selected-board{
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .columns {
   display: flex;
   gap: 20px;
   height: 100%;
   align-items: flex-start;
+  /* Make the flex row expand to the total width of its children.
+     This ensures the parent scroll container actually gets horizontal overflow. */
+  flex-wrap: nowrap;
+  width: max-content;
+  min-width: max-content;
 }
+
 .add-column {
   width: 280px;
+  /* Keep this fixed so it contributes to horizontal overflow. */
+  flex: 0 0 280px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -69,17 +83,22 @@ const { selectedBoard } = storeToRefs(boardStore)
   z-index: 1;
   border-radius: 6px;
   margin-top: 55px;
+  margin-right: 20px;
 }
+
 .add-column:hover {
   cursor: pointer;
 }
+
 .add-column p {
   color: var(--muted);
   font-size: 1.1rem;
 }
+
 .add-column:hover p {
   color: var(--primary);
 }
+
 .no-columns {
   display: flex;
   flex-direction: column;
@@ -87,6 +106,7 @@ const { selectedBoard } = storeToRefs(boardStore)
   justify-content: center;
   height: 100%;
   text-align: center;
+  
 }
 
 .no-columns p {
@@ -94,5 +114,4 @@ const { selectedBoard } = storeToRefs(boardStore)
   color: var(--muted);
   margin-bottom: 20px;
 }
-
 </style>
