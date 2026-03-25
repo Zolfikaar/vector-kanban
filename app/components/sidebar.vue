@@ -64,7 +64,7 @@ function HideSidebar() {
         <IconDarkThemeIcon :style="{ color: DarkModeEnabled ? 'var(--primary)' : 'var(--text)' }" />
       </div>
       <button class="toggle-sidebar" @click="HideSidebar">
-        <IconShowSidebarIcon />
+        <IconHideSidebarIcon />
         <p>Hide Sidebar</p>
       </button>
     </div>

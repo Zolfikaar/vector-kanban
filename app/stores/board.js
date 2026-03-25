@@ -7,22 +7,37 @@ export const useBoardStore = defineStore('board', {
   }),
 
   actions: {
+
     async loadBoards() {
 
-      const url = '/data.json'
+      const savedBoards = localStorage.getItem('boards')
 
-      try {
+      if (savedBoards) {
 
-        const response = await fetch(url)
-        const data = await response.json()
+        this.boards = JSON.parse(savedBoards)
 
-        this.boards = data.boards      
-        
-      } catch (error) {
-        console.error(error)
+      } else {
+
+        const url = '/data.json'
+
+        try {
+
+          const response = await fetch(url)
+          const data = await response.json()
+
+          this.boards = data.boards
+
+          savedBoards()
+          
+        } catch (error) {
+          console.error(error)
+        }
       }
-      
     },
+
+    saveBoards() {
+      localStorage.setItem('boards', JSON.stringify(this.boards))
+    }
     
      selectBoard(board) {
       this.selectedBoard =  board
