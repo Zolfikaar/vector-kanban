@@ -2,6 +2,7 @@
 import Switch from './switch.vue';
 import { useBoardStore } from '~/stores/board'
 const boardStore = useBoardStore()
+const emit = defineEmits(['update:hidden', 'update:openCreateBoardModal'])
 
 const DarkModeEnabled = ref(false)
 
@@ -19,16 +20,21 @@ const props = defineProps({
   hidden: {
     type: Boolean,
     default: false
+  },
+  openCreateBoardModal: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['update:hidden'])
 
 function HideSidebar() {
   emit('update:hidden', true)
 }
 
-
+const createBoard = () => {
+  emit('update:openCreateBoardModal', true)
+}
 
 </script>
 <template>
@@ -40,15 +46,16 @@ function HideSidebar() {
 
         <div v-for="board in boardStore.boards" :key="board.id">
 
-            <h3 class="board-item" :class="{ active: boardStore.selectedBoard?.name === board.name }" @click="boardStore.selectBoard(board)">
-              <IconBoardIcon />
-              <p class="board-name" v-if="board && board.name">{{ board.name }}</p>
-            </h3>
+          <h3 class="board-item" :class="{ active: boardStore.selectedBoard?.name === board.name }"
+            @click="boardStore.selectBoard(board)">
+            <IconBoardIcon />
+            <p class="board-name" v-if="board && board.name">{{ board.name }}</p>
+          </h3>
         </div>
-          
 
 
-        <div class="board-item create-board">
+
+        <div class="board-item create-board" @click="createBoard">
           <IconBoardIcon />
           <h3 class="board-name">
             <IconAddTaskMobileIcon width="20" height="20" />
@@ -73,7 +80,7 @@ function HideSidebar() {
 
 <style scoped>
 .sidebar {
-  
+
   width: 300px;
   flex: 0 0 300px;
   background-color: var(--card-topbar-sidebar);

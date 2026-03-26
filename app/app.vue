@@ -3,6 +3,12 @@ import { useBoardStore } from './stores/board';
 const boardStore = useBoardStore()
 
 const isSidebarHidden = ref(false)
+const isCreateBoard = ref(false)
+const isOverlayActivated = computed(() => isCreateBoard.value)
+
+const closeCreateBoardModal = () => {
+  isCreateBoard.value = false
+}
 
 function showSidebar() {
   isSidebarHidden.value = false
@@ -13,44 +19,44 @@ onMounted(async () => {
   await useBoardStore().loadBoards();
   if (boardStore.boards.length) {
 
-    if(boardStore.selectBoard === null){
+    if (boardStore.selectBoard === null) {
       boardStore.selectBoard(boardStore.boards[0])
     }
 
   }
 })
 
-
-
-
 </script>
 
 <template>
-  <section class="overlay">
-    <section class="app-shell">
+  <section class="app-shell">
 
-      <Topbar :hidden="isSidebarHidden" />
+    <Topbar :hidden="isSidebarHidden" />
 
-      <section class="content-shell">
+    <section class="content-shell">
 
-        <Sidebar v-model:hidden="isSidebarHidden" />
+      <Sidebar v-model:hidden="isSidebarHidden" v-model:openCreateBoardModal="isCreateBoard" />
 
-        <section class="main-area">
+      <section class="main-area">
 
-          <div class="show-sidebar" @click="showSidebar" v-if="isSidebarHidden">
-            <IconShowSidebarIcon />
-          </div>
+        <div class="show-sidebar" @click="showSidebar" v-if="isSidebarHidden">
+          <IconShowSidebarIcon />
+        </div>
 
-          <div class="main-content">
-            <Home />
-          </div>
-
-        </section>
+        <div class="main-content">
+          <Home />
+        </div>
 
       </section>
 
     </section>
+
   </section>
+
+  <section class="overlay" :class="isOverlayActivated ? 'isactive' : ''" @click="closeCreateBoardModal"></section>
+
+  <CreateBoard v-model:openCreateBoardModal="isCreateBoard" />
+
 </template>
 
 <style scoped>
@@ -58,6 +64,8 @@ onMounted(async () => {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 .content-shell {

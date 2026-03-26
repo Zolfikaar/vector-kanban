@@ -54,6 +54,7 @@ const columnColor = computed(() => {
   return match ? match.color : '#000000'
 })
 
+
 </script>
 
 <template>

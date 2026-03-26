@@ -26,18 +26,19 @@ export const useBoardStore = defineStore('board', {
           const data = await response.json()
 
           this.boards = data.boards
-
-          savedBoards()
           
+          localStorage.setItem('boards', JSON.stringify(this.boards))
+          // this.savedBoards()
+
         } catch (error) {
           console.error(error)
         }
       }
     },
 
-    saveBoards() {
-      localStorage.setItem('boards', JSON.stringify(this.boards))
-    }
+    // saveBoards() {
+    //   localStorage.setItem('boards', JSON.stringify(this.boards))
+    // },
     
      selectBoard(board) {
       this.selectedBoard =  board
