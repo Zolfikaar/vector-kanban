@@ -89,7 +89,6 @@ const clearModal = () => {
             <input type="text" v-model="col.name">
 
             <button @click="RemoveColumn">
-
               <IconCrossIcon />
             </button>
           </div>

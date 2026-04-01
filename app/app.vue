@@ -4,10 +4,20 @@ const boardStore = useBoardStore()
 
 const isSidebarHidden = ref(false)
 const isCreateBoard = ref(false)
-const isOverlayActivated = computed(() => isCreateBoard.value)
+const isDeleteBoard = ref(false)
+const isOverlayActivated = computed(() => isCreateBoard.value || isDeleteBoard.value)
 
 const closeCreateBoardModal = () => {
   isCreateBoard.value = false
+}
+
+const closeDeleteBoardModal = () => {
+  isDeleteBoard.value = false
+}
+
+function closeModals() {
+  closeDeleteBoardModal()
+  closeCreateBoardModal()
 }
 
 function showSidebar() {
@@ -31,7 +41,7 @@ onMounted(async () => {
 <template>
   <section class="app-shell">
 
-    <Topbar :hidden="isSidebarHidden" />
+    <Topbar v-model:hidden="isSidebarHidden" v-model:openDeleteBoardModal="isDeleteBoard" />
 
     <section class="content-shell">
 
@@ -53,9 +63,11 @@ onMounted(async () => {
 
   </section>
 
-  <section class="overlay" :class="isOverlayActivated ? 'isactive' : ''" @click="closeCreateBoardModal"></section>
+  <section class="overlay" :class="isOverlayActivated ? 'isactive' : ''" @click="closeModals"></section>
 
   <CreateBoard v-model:openCreateBoardModal="isCreateBoard" />
+
+  <DeleteBoard v-model:openDeleteBoardModal="isDeleteBoard" />
 
 </template>
 

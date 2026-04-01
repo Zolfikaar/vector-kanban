@@ -17,6 +17,8 @@
   --primary-hover-bg: #a9a4ff1a;
   --danger: #ea5555;
   --danger-hover: #ff9898;
+  --secondary-btn: rgba(99, 95, 199, 0.1);
+  --secondary-btn-hover: rgba(99, 95, 199, 0.25);
   --logo-clr: #000000;
   --newColumn-bg: #E9EFFA;
 }
@@ -32,6 +34,8 @@ html.dark {
   --primary-hover: #A8A4FF;
   --danger: #ea5555;
   --danger-hover: #ff9898;
+  --secondary-btn: white;
+  --secondary-btn-hover: white;
   --logo-clr: #ffffff;
   --newColumn-bg: #2B2C37;
 }

@@ -49,6 +49,16 @@ export const useBoardStore = defineStore('board', {
 
       this.saveBoards()
       
+    },
+
+    deleteBoard(board) {
+
+      const matchBoard = this.boards.find(val => val == board)
+      const index = this.boards.indexOf(matchBoard)
+      
+      this.boards.splice(index,1)
+      
+      this.saveBoards()
     }
   }
 })
