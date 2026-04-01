@@ -68,13 +68,13 @@ h4 {
   kerning: 0.15em;
 }
 
-p.medium {
+.medium {
   font-size: 0.8125em;
-  font-weight: medium;
+  font-weight: 500;
   line-height: 1.4375em;
 }
 
-p.bold {
+.bold {
   font-size: 0.75em;
   font-weight: bold;
   line-height: 0.9375em;

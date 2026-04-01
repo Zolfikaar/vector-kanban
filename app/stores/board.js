@@ -27,8 +27,7 @@ export const useBoardStore = defineStore('board', {
 
           this.boards = data.boards
           
-          localStorage.setItem('boards', JSON.stringify(this.boards))
-          // this.savedBoards()
+          this.saveBoards()
 
         } catch (error) {
           console.error(error)
@@ -36,12 +35,20 @@ export const useBoardStore = defineStore('board', {
       }
     },
 
-    // saveBoards() {
-    //   localStorage.setItem('boards', JSON.stringify(this.boards))
-    // },
+    saveBoards() {
+      localStorage.setItem('boards', JSON.stringify(this.boards))
+    },
     
      selectBoard(board) {
       this.selectedBoard =  board
+    },
+
+    createNewBoard(newBoard) {
+
+      this.boards.push(newBoard)
+
+      this.saveBoards()
+      
     }
   }
 })
