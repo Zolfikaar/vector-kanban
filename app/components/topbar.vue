@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useBoardStore } from '~/stores/board'
 import { storeToRefs } from 'pinia'
 
-const emit = defineEmits(['update:openDeleteBoardModal'])
+const emit = defineEmits(['update:openDeleteBoardModal', 'update:openEditBoardModal'])
 
 const boardStore = useBoardStore()
 const { selectedBoard } = storeToRefs(boardStore)
@@ -14,6 +14,10 @@ const props = defineProps({
     default: false
   },
   openDeleteBoardModal: {
+    type: Boolean,
+    default: false
+  },
+  openEditBoardModal: {
     type: Boolean,
     default: false
   }
@@ -33,12 +37,12 @@ function handleClickOutside(event) {
 }
 
 function deleteSelectedBoard() {
-  // show delete modal
-
-  
-
    emit('update:openDeleteBoardModal', true)
-
+}
+function editSelectedBoard() {
+   emit('update:openEditBoardModal', true)
+  //  console.log(selectedBoard.value);
+   
 }
 
 const topbarRef = ref(null)
@@ -49,11 +53,10 @@ onMounted(() => {
       showDetailsBox.value = false
     }
   })
-})
 
-onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+
 
 
 </script>
@@ -82,7 +85,7 @@ onUnmounted(() => {
           </button>
 
           <div v-if="showDetailsBox" class="details-box">
-            <span class="edit">Edit Board</span>
+            <span class="edit" @click="editSelectedBoard">Edit Board</span>
             <span class="delete" @click="deleteSelectedBoard">Delete Board</span>
           </div>
 

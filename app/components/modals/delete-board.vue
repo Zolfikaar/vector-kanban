@@ -17,6 +17,7 @@ const closeDeleteBoardModal = () => {
 const deleteSelectedBoard = () => {
   boardStore.deleteBoard(boardStore.selectedBoard)
   closeDeleteBoardModal()
+  boardStore.selectedBoard = null
 }
 </script>
 <template>
@@ -28,7 +29,7 @@ const deleteSelectedBoard = () => {
     </p>
     <div class="btns">
       <button class="delete-btn" @click="deleteSelectedBoard">Delete</button>
-      <button class="cancel-btn" @click="closeDeleteBoardModal">Cancel</button>
+      <button class="cancel-btn secondary-btn" @click="closeDeleteBoardModal">Cancel</button>
     </div>
   </div>
 </template>
@@ -82,13 +83,5 @@ const deleteSelectedBoard = () => {
   cursor: pointer;
 }
 
-.delete-modal .btns .cancel-btn {
-  background-color: var(--secondary-btn);
-  color: var(--primary);
-}
 
-.delete-modal .btns .cancel-btn:hover {
-  background-color: var(--secondary-btn-hover);
-  cursor: pointer;
-}
 </style>

@@ -9,7 +9,7 @@
 - [x] Load data.json
 - [x] Add Board
 - [ ] Edit Board
-- [ ] Delete Board
+- [x] Delete Board
 - [ ] Add Column
 - [ ] Add Task
 - [ ] Task Details

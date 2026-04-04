@@ -46,7 +46,7 @@ const createBoard = () => {
 
         <div v-for="board in boardStore.boards" :key="board.id">
 
-          <h3 class="board-item" :class="{ active: boardStore.selectedBoard?.name === board.name }"
+          <h3 class="board-item " :class="{ active: boardStore.selectedBoard?.name === board.name }"
             @click="boardStore.selectBoard(board)">
             <IconBoardIcon />
             <p class="board-name" v-if="board && board.name">{{ board.name }}</p>

@@ -113,7 +113,17 @@ textarea {
 .btn-primary:hover {
   background: var(--primary-hover);
 }
-
+.secondary-btn {
+  background: var(--secondary-btn);
+  color: var(--primary);
+  border: none;
+  padding: 0.5em 1em;
+  border-radius: 24px;
+  cursor: pointer;
+}
+.secondary-btn:hover {
+  background: var(--secondary-btn-hover);
+}
 .btn-inactive {
   background: var(--muted);
   color: #fff;

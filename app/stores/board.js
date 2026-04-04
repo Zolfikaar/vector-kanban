@@ -59,6 +59,12 @@ export const useBoardStore = defineStore('board', {
       this.boards.splice(index,1)
       
       this.saveBoards()
+    },
+
+    editBoard(updatedBoard) {
+
+      this.deleteBoard(this.selectedBoard)
+      this.createNewBoard(updatedBoard)
     }
   }
 })
