@@ -65,6 +65,17 @@ export const useBoardStore = defineStore('board', {
 
       this.deleteBoard(this.selectedBoard)
       this.createNewBoard(updatedBoard)
+    },
+
+    addColumnToBoard(columns) {
+
+      const index = this.boards.indexOf(this.selectedBoard)
+
+      if (index !== -1) {
+        this.boards[index].columns.push(...columns)
+      }
+
+      this.saveBoards()
     }
   }
 })

@@ -65,7 +65,7 @@ const UpdateBoard = () => {
   }
 
   boardStore.editBoard(currentBoard.value)
-
+  boardStore.selectedBoard = currentBoard.value
   closeEditBoardModal()
 }
 

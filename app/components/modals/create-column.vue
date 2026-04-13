@@ -1,30 +1,35 @@
 <script setup>
+import { ref, computed, watch } from 'vue'
 import { useBoardStore } from '~/stores/board'
+
 const boardStore = useBoardStore()
-const emit = defineEmits(['update:openCreateBoardModal'])
+const selectedBoard = computed(() => boardStore.selectedBoard)
+
+const emit = defineEmits(['update:openCreateColumnModal'])
 
 const props = defineProps({
-  openCreateBoardModal: {
+  openCreateColumnModal: {
     type: Boolean,
     default: false
   }
 })
 
-const closeCreateBoardModal = () => {
-  emit('update:openCreateBoardModal', false)
+const closeCreateColumnModal = () => {
+  emit('update:openCreateColumnModal', false)
 }
 
-const newBoard = ref({
-  name: '',
-  columns: [],
-  created_at: null,
-  created_by: null,
-  is_private: false
-})
 const isEmptyName = ref(false)
-const columns = ref([])
 
-watch(() => props.openCreateBoardModal, (val) => {
+const columns = ref([
+  {
+    id: crypto.randomUUID(),
+    name: '',
+    tasks: []
+  }
+])
+
+// عندما يفتح المودل نضمن وجود حقل واحد
+watch(() => props.openCreateColumnModal, (val) => {
   if (val) {
     columns.value = [{
       id: crypto.randomUUID(),
@@ -34,90 +39,62 @@ watch(() => props.openCreateBoardModal, (val) => {
   }
 })
 
+// إضافة عمود جديد
 const AddNewColumn = () => {
-
   columns.value.push({
     id: crypto.randomUUID(),
-    name: ''
-  })
-
-}
-
-const CreateNewBoard = () => {
-  // console.log(newBoard.value.name);
-  if (newBoard.value.name == '') {
-    isEmptyName.value = true
-  } else {
-    newBoard.value.columns = columns.value
-    newBoard.value.created_at = new Date()
-    newBoard.value.created_by = 'John Doe'
-    isEmptyName.value = false
-  }
-
-  boardStore.createNewBoard({ ...newBoard.value });
-  closeCreateBoardModal()
-  clearModal()
-}
-
-const RemoveColumn = () => {
-  if (columns.value.length > 0) {
-    columns.value.pop()
-  }
-}
-
-const clearModal = () => {
-  // newBoard.value.name = ''
-  // newBoard.value.columns = []
-  // newBoard.value.created_at = null
-  // newBoard.value.created_by = null
-  // newBoard.value.is_private = false
-
-  newBoard.value = {
     name: '',
-    columns: [],
-    created_at: null,
-    created_by: null,
-    is_private: false
-  }
-
-  columns.value = []
-
+    tasks: []
+  })
 }
 
+// حذف عمود
+const RemoveColumn = (index) => {
+  columns.value.splice(index, 1)
+}
+
+// إضافة الأعمدة للبورد
+const AddColumn = () => {
+
+  if (columns.value.some(col => col.name.trim() === '')) {
+    isEmptyName.value = true
+    return
+  }
+
+  isEmptyName.value = false
+
+  boardStore.addColumnToBoard(columns.value)
+
+  closeCreateColumnModal()
+  columns.value = []
+}
 </script>
 
 <template>
-  <div class="new-board" v-if="props.openCreateBoardModal">
+  <div class="create-column-modal" v-if="props.openCreateColumnModal">
 
-    <div class="header">
-      <h1>Add New Board</h1>
-      <button class="close-btn" @click="closeCreateBoardModal">
-        <IconCrossIcon />
-      </button>
-    </div>
-
-
+    <h1>{{ selectedBoard?.name }}</h1>
     <div class="fields">
-      <div class="board-name">
-        <label for="" class="medium">Name</label>
-        <span class="err-msg" v-if="isEmptyName">Can't be empty</span>
-        <input type="text" v-model="newBoard.name" :style="isEmptyName ? 'border: 1px solid red;' : ''">
-
-      </div>
 
       <div class="columns">
 
         <div class="col-row" id="newColRow">
 
-          <label class="medium">Columns</label>
+          <label class="medium">Column Name</label>
+          <span class="err-msg" v-if="isEmptyName">Can't be empty</span>
+          <div class="col-input" v-for="(col, index) in columns" :key="col.id">
 
-          <div class="col-input" v-for="col in columns" :key="col.id">
-            <input type="text" v-model="col.name">
+            <input
+              type="text"
+              placeholder="e.g. Todo"
+              v-model="col.name"
+            />
 
-            <button @click="RemoveColumn">
+            <button @click="RemoveColumn(index)">
               <IconCrossIcon />
             </button>
-          </div>
+
+        </div>
 
 
         </div>
@@ -128,27 +105,26 @@ const clearModal = () => {
 
     <div class="btns">
       <button class="add-column-btn" @click="AddNewColumn">+ Add New Column</button>
-      <button class="btn-primary create-btn" @click="CreateNewBoard">Create New Board</button>
+      <button class="btn-primary create-btn" @click="AddColumn">Add Column</button>
     </div>
-
   </div>
 </template>
 
 <style scoped>
-.new-board {
+.create-column-modal {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 480px;
-  min-height: 430px;
-  background-color: var(--card-topbar-sidebar);
-  border-radius: 25px;
+  min-height: 230px;
+  padding: 25px;
+  border-radius: 20px;
   z-index: 105;
-  padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  background-color: var(--card-topbar-sidebar);
 }
 
 .header {

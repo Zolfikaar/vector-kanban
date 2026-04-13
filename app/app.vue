@@ -6,7 +6,8 @@ const isSidebarHidden = ref(false)
 const isCreateBoard = ref(false)
 const isDeleteBoard = ref(false)
 const isEditBoard = ref(false)
-const isOverlayActivated = computed(() => isCreateBoard.value || isDeleteBoard.value || isEditBoard.value)
+const isCreateColumn = ref(false)
+const isOverlayActivated = computed(() => isCreateBoard.value || isDeleteBoard.value || isEditBoard.value || isCreateColumn.value)
 
 const closeCreateBoardModal = () => {
   isCreateBoard.value = false
@@ -20,10 +21,15 @@ const closeEditBoardModal = () => {
   isEditBoard.value = false
 }
 
+const closeCreateColumnModal = () => {
+  isCreateColumn.value = false
+}
+
 function closeModals() {
   closeDeleteBoardModal()
   closeCreateBoardModal()
   closeEditBoardModal()
+  closeCreateColumnModal()
 }
 
 function showSidebar() {
@@ -47,7 +53,8 @@ onMounted(async () => {
 <template>
   <section class="app-shell">
 
-    <Topbar v-model:hidden="isSidebarHidden" v-model:openDeleteBoardModal="isDeleteBoard" v-model:openEditBoardModal="isEditBoard"/>
+    <Topbar v-model:hidden="isSidebarHidden" v-model:openDeleteBoardModal="isDeleteBoard"
+      v-model:openEditBoardModal="isEditBoard" />
 
     <section class="content-shell">
 
@@ -60,7 +67,7 @@ onMounted(async () => {
         </div>
 
         <div class="main-content">
-          <Home />
+          <Home v-model:openCreateColumnModal="isCreateColumn" />
         </div>
 
       </section>
@@ -76,6 +83,8 @@ onMounted(async () => {
   <DeleteBoard v-model:openDeleteBoardModal="isDeleteBoard" />
 
   <EditBoard v-model:openEditBoardModal="isEditBoard" />
+
+  <CreateColumn v-model:openCreateColumnModal="isCreateColumn" />
 
 </template>
 
