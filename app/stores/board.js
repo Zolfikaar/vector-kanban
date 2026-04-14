@@ -3,8 +3,26 @@ import { defineStore } from 'pinia'
 export const useBoardStore = defineStore('board', {
   state: () => ({
     boards: [],
-    selectedBoard: null
+    selectedBoard: null,
+
+    selectedTask: null,
+    selectedColumn: null,
+
+    isTaskModalOpen: false,
+    isCreateBoardOpen: false,
+    isDeleteBoardOpen: false,
+    isEditBoardOpen: false,
+    isCreateColumnOpen: false
   }),
+
+  getters: {
+    isOverlayActive: (state) =>
+      state.isTaskModalOpen ||
+      state.isCreateBoardOpen ||
+      state.isDeleteBoardOpen ||
+      state.isEditBoardOpen ||
+      state.isCreateColumnOpen
+  },
 
   actions: {
 
@@ -13,34 +31,31 @@ export const useBoardStore = defineStore('board', {
       const savedBoards = localStorage.getItem('boards')
 
       if (savedBoards) {
-
         this.boards = JSON.parse(savedBoards)
-
-      } else {
-
-        const url = '/data.json'
-
-        try {
-
-          const response = await fetch(url)
-          const data = await response.json()
-
-          this.boards = data.boards
-          
-          this.saveBoards()
-
-        } catch (error) {
-          console.error(error)
-        }
+        return
       }
+
+      try {
+
+        const response = await fetch('/data.json')
+        const data = await response.json()
+
+        this.boards = data.boards
+
+        this.saveBoards()
+
+      } catch (error) {
+        console.error(error)
+      }
+
     },
 
     saveBoards() {
       localStorage.setItem('boards', JSON.stringify(this.boards))
     },
-    
-     selectBoard(board) {
-      this.selectedBoard =  board
+
+    selectBoard(board) {
+      this.selectedBoard = board
     },
 
     createNewBoard(newBoard) {
@@ -48,23 +63,33 @@ export const useBoardStore = defineStore('board', {
       this.boards.push(newBoard)
 
       this.saveBoards()
-      
+
     },
 
     deleteBoard(board) {
 
-      const matchBoard = this.boards.find(val => val == board)
-      const index = this.boards.indexOf(matchBoard)
-      
-      this.boards.splice(index,1)
-      
+      const index = this.boards.indexOf(board)
+
+      if (index !== -1) {
+        this.boards.splice(index, 1)
+      }
+
       this.saveBoards()
+
+      this.selectedBoard = null
+
     },
 
     editBoard(updatedBoard) {
 
-      this.deleteBoard(this.selectedBoard)
-      this.createNewBoard(updatedBoard)
+      const index = this.boards.indexOf(this.selectedBoard)
+
+      if (index !== -1) {
+        this.boards[index] = updatedBoard
+      }
+
+      this.saveBoards()
+
     },
 
     addColumnToBoard(columns) {
@@ -76,6 +101,26 @@ export const useBoardStore = defineStore('board', {
       }
 
       this.saveBoards()
+
+    },
+
+    openTaskModal(task, column) {
+
+      this.selectedTask = task
+      this.selectedColumn = column
+      this.isTaskModalOpen = true
+
+    },
+
+    closeAllModals() {
+
+      this.isTaskModalOpen = false
+      this.isCreateBoardOpen = false
+      this.isDeleteBoardOpen = false
+      this.isEditBoardOpen = false
+      this.isCreateColumnOpen = false
+
     }
+
   }
 })

@@ -1,57 +1,26 @@
 <script setup>
 import { useBoardStore } from '~/stores/board'
 const boardStore = useBoardStore()
-const emit = defineEmits(['update:openDeleteBoardModal'])
 
-const props = defineProps({
-  openDeleteBoardModal: {
-    type: Boolean,
-    default: false
-  }
-})
 
-const closeDeleteBoardModal = () => {
-  emit('update:openDeleteBoardModal', false)
-}
 
-const deleteSelectedBoard = () => {
-  boardStore.deleteBoard(boardStore.selectedBoard)
-  closeDeleteBoardModal()
-  boardStore.selectedBoard = null
-}
 </script>
 <template>
-  <div class="delete-modal" v-if="props.openDeleteBoardModal">
+  <div class="modal-global delete-modal">
     <h2>Delete this board?</h2>
     <p class="medium">
       Are you sure you want to delete the ‘Platform Launch’ board? This action will remove all columns and tasks and
       cannot be reversed.
     </p>
     <div class="btns">
-      <button class="delete-btn" @click="deleteSelectedBoard">Delete</button>
-      <button class="cancel-btn secondary-btn" @click="closeDeleteBoardModal">Cancel</button>
+      <button class="delete-btn" @click="boardStore.boardStore.deleteBoard(boardStore.selectedBoard)">Delete</button>
+      <button class="cancel-btn secondary-btn" @click="boardStore.closeAllModals()">Cancel</button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.delete-modal {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 480px;
-  height: 230px;
-  padding: 25px;
-  border-radius: 20px;
-  z-index: 105;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background-color: var(--card-topbar-sidebar);
-}
-
-.delete-modal h2 {
+.modal-global delete-modal h2 {
   color: var(--danger);
 }
 
@@ -82,6 +51,4 @@ const deleteSelectedBoard = () => {
   background-color: var(--danger-hover);
   cursor: pointer;
 }
-
-
 </style>

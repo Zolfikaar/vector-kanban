@@ -4,19 +4,6 @@ import { useBoardStore } from '~/stores/board'
 
 const boardStore = useBoardStore()
 
-const emit = defineEmits(['update:openEditBoardModal'])
-
-const props = defineProps({
-  openEditBoardModal: {
-    type: Boolean,
-    default: false
-  }
-})
-
-const closeEditBoardModal = () => {
-  emit('update:openEditBoardModal', false)
-}
-
 const isEmptyName = ref(false)
 
 const currentBoard = ref({
@@ -66,19 +53,19 @@ const UpdateBoard = () => {
 
   boardStore.editBoard(currentBoard.value)
   boardStore.selectedBoard = currentBoard.value
-  closeEditBoardModal()
+  // closeEditBoardModal()
 }
 
 </script>
 
 <template>
 
-  <div class="edit-board" v-if="props.openEditBoardModal">
+  <div class="modal-global">
 
     <div class="header">
       <h1>Edit Board</h1>
 
-      <button class="close-btn" @click="closeEditBoardModal">
+      <button class="close-btn" @click="boardStore.closeAllModals()">
         <IconCrossIcon />
       </button>
     </div>
@@ -138,21 +125,6 @@ const UpdateBoard = () => {
 </template>
 
 <style scoped>
-.edit-board {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 480px;
-  min-height: 430px;
-  background-color: var(--card-topbar-sidebar);
-  border-radius: 25px;
-  z-index: 105;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
 
 .header {
   display: flex;

@@ -87,7 +87,7 @@ const clearModal = () => {
 </script>
 
 <template>
-  <div class="new-board" v-if="props.openCreateBoardModal">
+  <div class="modal-global" >
 
     <div class="header">
       <h1>Add New Board</h1>
@@ -135,22 +135,6 @@ const clearModal = () => {
 </template>
 
 <style scoped>
-.new-board {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 480px;
-  min-height: 430px;
-  background-color: var(--card-topbar-sidebar);
-  border-radius: 25px;
-  z-index: 105;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
 .header {
   display: flex;
   align-items: center;

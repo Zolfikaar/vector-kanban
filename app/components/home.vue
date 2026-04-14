@@ -4,9 +4,17 @@ import { storeToRefs } from 'pinia'
 
 const boardStore = useBoardStore()
 const { selectedBoard } = storeToRefs(boardStore)
+// const props = defineProps({
 
+//   openViewTaskModal: {
+//     type: Boolean,
+//     default: false
+//   }
+
+// })
 const emit = defineEmits(['open-task-modal', 'update:openCreateColumnModal'])
 
+// const isViewTask = ref(false)
 const openCreateColumnModal = () => {
 
   emit('update:openCreateColumnModal', true)
@@ -26,7 +34,7 @@ const openCreateColumnModal = () => {
 
     <div class="columns" v-else-if="selectedBoard?.columns && selectedBoard.columns?.length > 0">
       <Column v-for="column in selectedBoard.columns" :key="column?.id" :column="column"
-        @open-task-modal="$emit('open-task-modal', column.id)" />
+         />
 
       <div class="add-column" @click="openCreateColumnModal">
 

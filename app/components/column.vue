@@ -1,17 +1,22 @@
 <script setup>
-// import { useBoardStore } from '~/stores/board'
+import { useBoardStore } from '~/stores/board'
 // import { storeToRefs } from 'pinia'
-// const boardStore = useBoardStore()
+const boardStore = useBoardStore()
 // const { selectedBoard } = storeToRefs(boardStore)
 import { computed } from 'vue'
-
+// const emit = defineEmits(['update:openViewTaskModal'])
 
 const props = defineProps({
   column: {
     type: Object,
     required: true
-  }
+  }, 
+  // openViewTaskModal: {
+  //   type: Boolean,
+  //   default: false
+  // }
 })
+// const isViewTask = ref(false)
 
 const colors = [
   { name: 'default', color: '#000000' },
@@ -54,6 +59,19 @@ const columnColor = computed(() => {
   return match ? match.color : '#000000'
 })
 
+// watch(isViewTask.value, (newValue) => {
+//   if (newValue) {
+//     console.log('View Task Modal is Shown', isViewTask.value);
+
+//   } else {
+//     console.log('View Task Modal is Hidden', isViewTask.value);
+//   }
+// })
+
+// const openTask = () => {
+//   isViewTask.value = true
+//   emit('update:openViewTaskModal', true)
+// }
 
 </script>
 
@@ -69,7 +87,7 @@ const columnColor = computed(() => {
     </p>
 
     <div class="tasks" v-if="column?.tasks && column.tasks.length > 0">
-      <Task v-for="task in column.tasks" :task="task" />
+      <Task v-for="task in column.tasks" :task="task" @click="boardStore.openTaskModal(task, column)"/>
     </div>
 
     <div class="no-task" v-else>

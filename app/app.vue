@@ -1,90 +1,79 @@
 <script setup>
-import { useBoardStore } from './stores/board';
+import { useBoardStore } from './stores/board'
+
 const boardStore = useBoardStore()
 
 const isSidebarHidden = ref(false)
-const isCreateBoard = ref(false)
-const isDeleteBoard = ref(false)
-const isEditBoard = ref(false)
-const isCreateColumn = ref(false)
-const isOverlayActivated = computed(() => isCreateBoard.value || isDeleteBoard.value || isEditBoard.value || isCreateColumn.value)
-
-const closeCreateBoardModal = () => {
-  isCreateBoard.value = false
-}
-
-const closeDeleteBoardModal = () => {
-  isDeleteBoard.value = false
-}
-
-const closeEditBoardModal = () => {
-  isEditBoard.value = false
-}
-
-const closeCreateColumnModal = () => {
-  isCreateColumn.value = false
-}
-
-function closeModals() {
-  closeDeleteBoardModal()
-  closeCreateBoardModal()
-  closeEditBoardModal()
-  closeCreateColumnModal()
-}
 
 function showSidebar() {
   isSidebarHidden.value = false
 }
 
-
 onMounted(async () => {
-  await useBoardStore().loadBoards();
-  if (boardStore.boards.length) {
 
-    if (boardStore.selectBoard === null) {
-      boardStore.selectBoard(boardStore.boards[0])
-    }
+  await boardStore.loadBoards()
 
+  if (boardStore.boards.length && !boardStore.selectedBoard) {
+    boardStore.selectBoard(boardStore.boards[0])
   }
-})
 
+})
 </script>
 
 <template>
-  <section class="app-shell">
 
-    <Topbar v-model:hidden="isSidebarHidden" v-model:openDeleteBoardModal="isDeleteBoard"
-      v-model:openEditBoardModal="isEditBoard" />
+<section class="app-shell">
 
-    <section class="content-shell">
+  <Topbar
+    v-model:hidden="isSidebarHidden"
+    v-model:openDeleteBoardModal="boardStore.isDeleteBoardOpen"
+    v-model:openEditBoardModal="boardStore.isEditBoardOpen"
+  />
 
-      <Sidebar v-model:hidden="isSidebarHidden" v-model:openCreateBoardModal="isCreateBoard" />
+  <section class="content-shell">
 
-      <section class="main-area">
+    <Sidebar
+      v-model:hidden="isSidebarHidden"
+      v-model:openCreateBoardModal="boardStore.isCreateBoardOpen"
+    />
 
-        <div class="show-sidebar" @click="showSidebar" v-if="isSidebarHidden">
-          <IconShowSidebarIcon />
-        </div>
+    <section class="main-area">
 
-        <div class="main-content">
-          <Home v-model:openCreateColumnModal="isCreateColumn" />
-        </div>
+      <div
+        class="show-sidebar"
+        @click="showSidebar"
+        v-if="isSidebarHidden"
+      >
+        <IconShowSidebarIcon />
+      </div>
 
-      </section>
+      <div class="main-content">
+        <Home
+          v-model:openCreateColumnModal="boardStore.isCreateColumnOpen"
+        />
+      </div>
 
     </section>
 
   </section>
 
-  <section class="overlay" :class="isOverlayActivated ? 'isactive' : ''" @click="closeModals"></section>
+</section>
 
-  <CreateBoard v-model:openCreateBoardModal="isCreateBoard" />
+<section
+  class="overlay"
+  :class="{ isactive: boardStore.isOverlayActive }"
+  @click="boardStore.closeAllModals()"
+/>
 
-  <DeleteBoard v-model:openDeleteBoardModal="isDeleteBoard" />
+<CreateBoard v-if="boardStore.isCreateBoardOpen" />
 
-  <EditBoard v-model:openEditBoardModal="isEditBoard" />
+<DeleteBoard v-if="boardStore.isDeleteBoardOpen" />
 
-  <CreateColumn v-model:openCreateColumnModal="isCreateColumn" />
+<EditBoard v-if="boardStore.isEditBoardOpen" />
+
+<CreateColumn v-if="boardStore.isCreateColumnOpen" />
+
+<ViewTask v-if="boardStore.isTaskModalOpen" />
 
 </template>
 

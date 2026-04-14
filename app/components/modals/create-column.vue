@@ -71,7 +71,7 @@ const AddColumn = () => {
 </script>
 
 <template>
-  <div class="create-column-modal" v-if="props.openCreateColumnModal">
+  <div class="modal-global">
 
     <h1>{{ selectedBoard?.name }}</h1>
     <div class="fields">
@@ -84,17 +84,13 @@ const AddColumn = () => {
           <span class="err-msg" v-if="isEmptyName">Can't be empty</span>
           <div class="col-input" v-for="(col, index) in columns" :key="col.id">
 
-            <input
-              type="text"
-              placeholder="e.g. Todo"
-              v-model="col.name"
-            />
+            <input type="text" placeholder="e.g. Todo" v-model="col.name" />
 
             <button @click="RemoveColumn(index)">
               <IconCrossIcon />
             </button>
 
-        </div>
+          </div>
 
 
         </div>
@@ -111,22 +107,6 @@ const AddColumn = () => {
 </template>
 
 <style scoped>
-.create-column-modal {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 480px;
-  min-height: 230px;
-  padding: 25px;
-  border-radius: 20px;
-  z-index: 105;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background-color: var(--card-topbar-sidebar);
-}
-
 .header {
   display: flex;
   align-items: center;
