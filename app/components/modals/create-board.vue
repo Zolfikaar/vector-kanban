@@ -1,93 +1,63 @@
 <script setup>
+import { ref } from 'vue'
 import { useBoardStore } from '~/stores/board'
+
 const boardStore = useBoardStore()
+
 const emit = defineEmits(['update:openCreateBoardModal'])
 
 const props = defineProps({
-  openCreateBoardModal: {
-    type: Boolean,
-    default: false
-  }
+  openCreateBoardModal: Boolean
 })
 
-const closeCreateBoardModal = () => {
+const newBoard = ref({ name: '' })
+
+const columns = ref([
+  { id: crypto.randomUUID(), name: '', tasks: [] }
+])
+
+const closeModal = () => {
   emit('update:openCreateBoardModal', false)
+  resetModal()
 }
 
-const newBoard = ref({
-  name: '',
-  columns: [],
-  created_at: null,
-  created_by: null,
-  is_private: false
-})
-const isEmptyName = ref(false)
-const columns = ref([])
+const resetModal = () => {
+  newBoard.value.name = ''
+  columns.value = [{ id: crypto.randomUUID(), name: '', tasks: [] }]
+}
 
-watch(() => props.openCreateBoardModal, (val) => {
-  if (val) {
-    columns.value = [{
-      id: crypto.randomUUID(),
-      name: '',
-      tasks: []
-    }]
-  }
-})
-
-const AddNewColumn = () => {
-
+const addColumn = () => {
   columns.value.push({
     id: crypto.randomUUID(),
-    name: ''
+    name: '',
+    tasks: []
+  })
+}
+
+const removeColumn = (id) => {
+  if (columns.value.length === 1) return
+  columns.value = columns.value.filter(c => c.id !== id)
+}
+
+const createBoard = () => {
+
+  if (!newBoard.value.name.trim()) return
+  if (columns.value.some(c => !c.name.trim())) return
+
+  boardStore.createNewBoard({
+    name: newBoard.value.name,
+    columns: columns.value,
+    created_at: new Date(),
+    created_by: 'John Doe',
+    is_private: false
   })
 
+  closeModal()
 }
-
-const CreateNewBoard = () => {
-  // console.log(newBoard.value.name);
-  if (newBoard.value.name == '') {
-    isEmptyName.value = true
-  } else {
-    newBoard.value.columns = columns.value
-    newBoard.value.created_at = new Date()
-    newBoard.value.created_by = 'John Doe'
-    isEmptyName.value = false
-  }
-
-  boardStore.createNewBoard({ ...newBoard.value });
-  closeCreateBoardModal()
-  clearModal()
-}
-
-const RemoveColumn = () => {
-  if (columns.value.length > 0) {
-    columns.value.pop()
-  }
-}
-
-const clearModal = () => {
-  // newBoard.value.name = ''
-  // newBoard.value.columns = []
-  // newBoard.value.created_at = null
-  // newBoard.value.created_by = null
-  // newBoard.value.is_private = false
-
-  newBoard.value = {
-    name: '',
-    columns: [],
-    created_at: null,
-    created_by: null,
-    is_private: false
-  }
-
-  columns.value = []
-
-}
-
 </script>
 
 <template>
-  <div class="modal-global" >
+  <div class="modal-global">
 
     <div class="header">
       <h1>Add New Board</h1>
@@ -96,29 +66,33 @@ const clearModal = () => {
       </button>
     </div>
 
-
     <div class="fields">
-      <div class="board-name">
-        <label for="" class="medium">Name</label>
-        <span class="err-msg" v-if="isEmptyName">Can't be empty</span>
-        <input type="text" v-model="newBoard.name" :style="isEmptyName ? 'border: 1px solid red;' : ''">
 
+      <div class="board-name">
+        <label class="medium">Name</label>
+
+        <span class="err-msg" v-if="isEmptyName">
+          Can't be empty
+        </span>
+
+        <input type="text" v-model="newBoard.name" :class="{ error: isBoardNameInvalid }">
       </div>
 
       <div class="columns">
 
-        <div class="col-row" id="newColRow">
+        <div class="col-row">
 
           <label class="medium">Columns</label>
 
           <div class="col-input" v-for="col in columns" :key="col.id">
-            <input type="text" v-model="col.name">
 
-            <button @click="RemoveColumn">
+            <input type="text" v-model="col.name" :class="{ error: !col.name.trim() }">
+
+            <button @click="RemoveColumn(col.id)">
               <IconCrossIcon />
             </button>
-          </div>
 
+          </div>
 
         </div>
 
@@ -127,8 +101,13 @@ const clearModal = () => {
     </div>
 
     <div class="btns">
-      <button class="add-column-btn" @click="AddNewColumn">+ Add New Column</button>
-      <button class="btn-primary create-btn" @click="CreateNewBoard">Create New Board</button>
+      <button class="add-column-btn" @click="AddNewColumn">
+        + Add New Column
+      </button>
+
+      <button class="btn-primary create-btn" @click="CreateNewBoard">
+        Create New Board
+      </button>
     </div>
 
   </div>
@@ -141,29 +120,19 @@ const clearModal = () => {
   justify-content: space-between;
 }
 
-.fields {}
-
-.fields .board-name {
+.board-name {
   margin-bottom: 20px;
 }
 
-.fields .columns {}
-
-.fields .columns .col-row {}
-
-.fields .columns .col-row .col-input {
-  margin-bottom: 10px;
-}
-
-.fields .board-name label,
-.fields .columns .col-row label {
+.board-name label,
+.col-row label {
   color: var(--muted);
   display: inline-block;
   margin-bottom: 5px;
 }
 
-.fields .board-name input,
-.fields .columns .col-row .col-input input {
+.board-name input,
+.col-input input {
   width: 100%;
   height: 40px;
   border: 1px solid var(--muted);
@@ -171,8 +140,12 @@ const clearModal = () => {
   padding-left: 10px;
 }
 
-.fields .board-name input:focus {
-  outline-color: unset;
+.col-input {
+  margin-bottom: 10px;
+}
+
+.col-input input {
+  width: calc(100% - 40px);
 }
 
 .err-msg {
@@ -180,114 +153,31 @@ const clearModal = () => {
   float: right;
 }
 
-.fields .columns .col-row .col-input input {
-  width: calc(100% - 40px);
-}
-
-
 .btns button {
   width: 100%;
   height: 40px;
   border-radius: 50px;
   border: none;
-}
-
-.btns button:hover {
   cursor: pointer;
 }
 
-.btns .create-btn {
+.create-btn {
   margin-top: 20px;
   display: block;
 }
 
-.btns .add-column-btn {
-  color: var(--primary);
-  background-color: #9797971a;
-}
-
-html.dark .btns .add-column-btn {
-  background-color: white;
-}
-
-.btns .add-column-btn:hover,
-html.dark .btns .add-column-btn:hover {
-  background-color: var(--primary-hover);
-  color: white;
-}
-
-/*
-.close-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent;
-  border: .5px solid var(--danger-hover);
-}
-
-.close-btn:hover {
-  cursor: pointer;
-  border-color: var(--danger);
-}
-
-.close-btn svg {
-  margin-top: 5px;
-  color: var(--danger);
-}
-
-.close-btn:hover svg {
-  color: var(--danger-hover);
-  
-}
-
-.name-field {
-  margin-bottom: 15px;
-}
-
-.name-field input {
-  height: 40px;
-  width: 100%;
-  margin-top: 10px;
-  border-radius: 5px;
-  border: 1px solid var(--muted);
-}
-
-.columns .column-row {
-  margin-bottom: 10px;
-}
-
-.columns .column-row input {
-  margin-top: 10px;
-  height: 40px;
-  border: 1px solid var(--muted);
-  border-radius: 5px;
-  width: calc(100% - 30px);
-}
-
-.add-column-btn,
-.create-btn {
-  height: 40px;
-}
-
 .add-column-btn {
   color: var(--primary);
-  background-color: #625fc719;
-  border-radius: 50px;
-  border: none;
+  background: #9797971a;
 }
 
-.add-column-btn:hover {
-  cursor: pointer;
+html.dark .add-column-btn {
+  background: white;
 }
 
-.create-btn {
-
-margin-top: 15px;
-display: flex;
-justify-content: center;
+.add-column-btn:hover,
+html.dark .add-column-btn:hover {
+  background: var(--primary-hover);
+  color: white;
 }
-*/
 </style>
