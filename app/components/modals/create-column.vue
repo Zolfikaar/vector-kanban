@@ -28,7 +28,6 @@ const columns = ref([
   }
 ])
 
-// عندما يفتح المودل نضمن وجود حقل واحد
 watch(() => props.openCreateColumnModal, (val) => {
   if (val) {
     columns.value = [{
@@ -39,7 +38,7 @@ watch(() => props.openCreateColumnModal, (val) => {
   }
 })
 
-// إضافة عمود جديد
+
 const AddNewColumn = () => {
   columns.value.push({
     id: crypto.randomUUID(),
@@ -48,12 +47,10 @@ const AddNewColumn = () => {
   })
 }
 
-// حذف عمود
 const RemoveColumn = (index) => {
   columns.value.splice(index, 1)
 }
 
-// إضافة الأعمدة للبورد
 const AddColumn = () => {
 
   if (columns.value.some(col => col.name.trim() === '')) {

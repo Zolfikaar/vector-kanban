@@ -15,6 +15,12 @@ export const useBoardStore = defineStore('board', {
     isCreateColumnOpen: false,
     isEditTaskOpen: false,
     isDeleteTaskOpen: false,
+    isCreateTaskOpen: false,
+
+    newTaskTitle: '',
+    newTaskDescription: '',
+    newTaskSubtasks: [],
+    newTaskStatus: null
   }),
 
   getters: {
@@ -25,7 +31,8 @@ export const useBoardStore = defineStore('board', {
       state.isEditBoardOpen ||
       state.isCreateColumnOpen ||
       state.isEditTaskOpen ||
-      state.isDeleteTaskOpen
+      state.isDeleteTaskOpen ||
+      state.isCreateTaskOpen
   },
 
   actions: {
@@ -125,7 +132,39 @@ export const useBoardStore = defineStore('board', {
       this.isCreateColumnOpen = false
       this.isEditTaskOpen = false
       this.isDeleteTaskOpen = false
+      this.isCreateTaskOpen = false
 
+    },
+
+    resetNewTaskData() {
+
+      this.newTaskTitle = ''
+      this.newTaskDescription = ''
+      this.newTaskSubtasks = []
+      this.newTaskStatus = null
+      this.isCreateTaskOpen = false
+    },
+
+    createTask() {
+      if (!this.newTaskTitle || !this.newTaskStatus) return
+
+      const newTask = {
+        title: this.newTaskTitle,
+        description: this.newTaskDescription,
+        subtasks: this.newTaskSubtasks.map((subtask) => ({
+          title: subtask,
+          isCompleted: false
+        }))
+      }
+
+      const column = this.selectedBoard.columns.find(col => col.name === this.newTaskStatus)
+
+      if (column) {
+        column.tasks.push(newTask)
+        this.saveBoards()
+      }
+
+      this.resetNewTaskData()
     },
 
   }

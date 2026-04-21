@@ -28,6 +28,7 @@ onMounted(async () => {
     v-model:hidden="isSidebarHidden"
     v-model:openDeleteBoardModal="boardStore.isDeleteBoardOpen"
     v-model:openEditBoardModal="boardStore.isEditBoardOpen"
+    v-model:openCreateTaskModal="boardStore.isCreateTaskOpen"
   />
 
   <section class="content-shell">
@@ -78,6 +79,8 @@ onMounted(async () => {
 <EditTask v-if="boardStore.isEditTaskOpen" />
 
 <DeleteTask v-if="boardStore.isDeleteTaskOpen" />
+
+<CreateTask v-if="boardStore.isCreateTaskOpen" />
 
 </template>
 

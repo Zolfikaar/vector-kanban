@@ -135,7 +135,7 @@ const createBoard = () => {
 .col-input input {
   width: 100%;
   height: 40px;
-  border: 1px solid var(--muted);
+  border: 1px solid var(--input-border);
   border-radius: 5px;
   padding-left: 10px;
 }
@@ -146,6 +146,7 @@ const createBoard = () => {
 
 .col-input input {
   width: calc(100% - 40px);
+  height: 40px;
 }
 
 .err-msg {
