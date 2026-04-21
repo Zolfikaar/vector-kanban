@@ -37,12 +37,12 @@ function handleClickOutside(event) {
 }
 
 function deleteSelectedBoard() {
-   emit('update:openDeleteBoardModal', true)
+  emit('update:openDeleteBoardModal', true)
 }
 function editSelectedBoard() {
-   emit('update:openEditBoardModal', true)
+  emit('update:openEditBoardModal', true)
   //  console.log(selectedBoard.value);
-   
+
 }
 
 const topbarRef = ref(null)
@@ -65,7 +65,7 @@ onMounted(() => {
   <div class="topbar" ref="topbarRef">
 
     <div class="logo" :class="hidden ? 'shrinked' : ''">
-      <LogoIcon class="logo-icon" />
+      <LogoLightIcon class="logo-icon" />
     </div>
 
     <div class="main">

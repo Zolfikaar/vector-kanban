@@ -3,8 +3,8 @@ import { defineStore } from 'pinia'
 export const useBoardStore = defineStore('board', {
   state: () => ({
     boards: [],
+    
     selectedBoard: null,
-
     selectedTask: null,
     selectedColumn: null,
 
@@ -12,7 +12,9 @@ export const useBoardStore = defineStore('board', {
     isCreateBoardOpen: false,
     isDeleteBoardOpen: false,
     isEditBoardOpen: false,
-    isCreateColumnOpen: false
+    isCreateColumnOpen: false,
+    isEditTaskOpen: false,
+    isDeleteTaskOpen: false,
   }),
 
   getters: {
@@ -21,7 +23,9 @@ export const useBoardStore = defineStore('board', {
       state.isCreateBoardOpen ||
       state.isDeleteBoardOpen ||
       state.isEditBoardOpen ||
-      state.isCreateColumnOpen
+      state.isCreateColumnOpen ||
+      state.isEditTaskOpen ||
+      state.isDeleteTaskOpen
   },
 
   actions: {
@@ -119,8 +123,10 @@ export const useBoardStore = defineStore('board', {
       this.isDeleteBoardOpen = false
       this.isEditBoardOpen = false
       this.isCreateColumnOpen = false
+      this.isEditTaskOpen = false
+      this.isDeleteTaskOpen = false
 
-    }
+    },
 
   }
 })

@@ -75,6 +75,10 @@ onMounted(async () => {
 
 <ViewTask v-if="boardStore.isTaskModalOpen" />
 
+<EditTask v-if="boardStore.isEditTaskOpen" />
+
+<DeleteTask v-if="boardStore.isDeleteTaskOpen" />
+
 </template>
 
 <style scoped>

@@ -8,9 +8,9 @@
 - [x] Dark Mode
 - [x] Load data.json
 - [x] Add Board
-- [ ] Edit Board
+- [x] Edit Board
 - [x] Delete Board
-- [ ] Add Column
+- [x] Add Column
 - [ ] Add Task
 - [ ] Task Details
 - [ ] Subtasks
