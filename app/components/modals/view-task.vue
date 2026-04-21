@@ -131,6 +131,9 @@ const { selectedTask: task, selectedColumn: column } = storeToRefs(boardStore)
   padding: 10px;
   border-radius: 5px;
 }
+.subtasks ul li:hover{
+  background-color: #9797971a;
+}
 
 .subtasks li.completed {
   text-decoration: line-through;

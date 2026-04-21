@@ -12,7 +12,7 @@
 - [x] Delete Board
 - [x] Add Column
 - [ ] Add Task
-- [ ] Task Details
+- [x] Task Details
 - [ ] Subtasks
 - [ ] Edit Task
 - [ ] Delete Task
