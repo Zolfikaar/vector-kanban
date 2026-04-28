@@ -14,7 +14,6 @@ const props = defineProps({
 })
 
 const colors = [
-  { name: 'default', color: '#000000' },
   { name: 'todo', color: '#49C4E5' },
   { name: 'doing', color: '#8471F2' },
   { name: 'done', color: '#67E2AE' },
@@ -40,18 +39,46 @@ const colors = [
   { name: 'planning', color: '#FFCA8A' },
   { name: 'retrospective', color: '#F5C94C' },
   { name: 'review', color: '#F5A75D' },
-  { name: 'analysis', color: '#FFEAA7' },
-  { name: 'research', color: '#FFEAA7' },
   { name: 'analysis', color: '#FFEAA7' }
 ]
 
+const fallbackPalette = [
+  '#49C4E5',
+  '#8471F2',
+  '#67E2AE',
+  '#5AD0F0',
+  '#957FF5',
+  '#FF7FB2',
+  '#FFD966',
+  '#FFA24C'
+]
+
+const normalizeName = (value = '') => value.trim().toLowerCase()
+
+const getStablePaletteColor = (seedValue = '') => {
+  const seed = String(seedValue)
+  if (!seed) return fallbackPalette[0]
+
+  let hash = 0
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash << 5) - hash + seed.charCodeAt(index)
+    hash |= 0
+  }
+
+  const paletteIndex = Math.abs(hash) % fallbackPalette.length
+  return fallbackPalette[paletteIndex]
+}
+
 
 const columnColor = computed(() => {
+  const normalizedColumnName = normalizeName(props.column?.name)
   const match = colors.find(
-    c => c.name.toLowerCase() === props.column.name.toLowerCase()
+    c => c.name === normalizedColumnName
   )
 
-  return match ? match.color : '#000000'
+  if (match) return match.color
+
+  return getStablePaletteColor(props.column?.id || normalizedColumnName)
 })
 
 

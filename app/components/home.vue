@@ -5,14 +5,6 @@ import { storeToRefs } from 'pinia'
 const boardStore = useBoardStore()
 const { selectedBoard } = storeToRefs(boardStore)
 
-// const emit = defineEmits(['open-task-modal', 'update:openCreateColumnModal'])
-
-// const openCreateColumnModal = () => {
-
-//   emit('update:openCreateColumnModal', true)
-// }
-
-
 const isLoading = computed(() => boardStore.isLoading)
 </script>
 
