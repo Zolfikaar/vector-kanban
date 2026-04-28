@@ -4,9 +4,12 @@ import { useBoardStore } from '~/stores/board'
 const boardStore = useBoardStore()
 const emit = defineEmits(['update:hidden', 'update:openCreateBoardModal'])
 
+const THEME_STORAGE_KEY = 'theme'
 const DarkModeEnabled = ref(false)
 
 watch(DarkModeEnabled, (enabled) => {
+  if (typeof window === 'undefined') return
+
   const html = document.documentElement
 
   if (enabled) {
@@ -14,6 +17,13 @@ watch(DarkModeEnabled, (enabled) => {
   } else {
     html.classList.remove('dark')
   }
+
+  localStorage.setItem(THEME_STORAGE_KEY, enabled ? 'dark' : 'light')
+})
+
+onMounted(() => {
+  const storedTheme = localStorage.getItem(THEME_STORAGE_KEY)
+  DarkModeEnabled.value = storedTheme === 'dark'
 })
 
 const props = defineProps({
