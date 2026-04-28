@@ -19,6 +19,7 @@ const closeCreateColumnModal = () => {
 }
 
 const isEmptyName = ref(false)
+const hasTriedSubmit = ref(false)
 
 const columns = ref([
   {
@@ -30,6 +31,8 @@ const columns = ref([
 
 watch(() => props.openCreateColumnModal, (val) => {
   if (val) {
+    hasTriedSubmit.value = false
+    isEmptyName.value = false
     columns.value = [{
       id: crypto.randomUUID(),
       name: '',
@@ -40,6 +43,8 @@ watch(() => props.openCreateColumnModal, (val) => {
 
 
 const AddNewColumn = () => {
+  hasTriedSubmit.value = false
+  isEmptyName.value = false
   columns.value.push({
     id: crypto.randomUUID(),
     name: '',
@@ -51,7 +56,10 @@ const RemoveColumn = (index) => {
   columns.value.splice(index, 1)
 }
 
+const isColumnInvalid = (col) => hasTriedSubmit.value && !col.name.trim()
+
 const AddColumn = () => {
+  hasTriedSubmit.value = true
 
   if (columns.value.some(col => col.name.trim() === '')) {
     isEmptyName.value = true
@@ -81,7 +89,7 @@ const AddColumn = () => {
           <span class="err-msg" v-if="isEmptyName">Can't be empty</span>
           <div class="col-input" v-for="(col, index) in columns" :key="col.id">
 
-            <input type="text" placeholder="e.g. Todo" v-model="col.name" />
+            <input type="text" placeholder="e.g. Todo" v-model="col.name" :class="{ error: isColumnInvalid(col) }" />
 
             <button @click="RemoveColumn(index)">
               <IconCrossIcon />
@@ -121,6 +129,9 @@ const AddColumn = () => {
 .fields .columns .col-row {}
 
 .fields .columns .col-row .col-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin-bottom: 10px;
 }
 
@@ -151,6 +162,21 @@ const AddColumn = () => {
 
 .fields .columns .col-row .col-input input {
   width: calc(100% - 40px);
+}
+
+.fields .columns .col-row .col-input button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.fields .columns .col-row .col-input button:hover {
+  color: var(--danger);
+}
+
+.fields .columns .col-row .col-input input.error {
+  border-color: var(--danger);
 }
 
 

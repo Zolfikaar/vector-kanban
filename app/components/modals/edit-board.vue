@@ -4,6 +4,7 @@ import { useBoardStore } from '~/stores/board'
 
 const boardStore = useBoardStore()
 
+const hasTriedSubmit = ref(false)
 const isEmptyName = ref(false)
 
 const currentBoard = ref({
@@ -33,6 +34,8 @@ watchEffect(() => {
 })
 
 const AddNewColumn = () => {
+  hasTriedSubmit.value = false
+  isEmptyName.value = false
   currentBoard.value.columns.push({
     id: Date.now(),
     name: ''
@@ -44,9 +47,17 @@ const RemoveColumn = (index) => {
   currentBoard.value.columns.splice(index, 1)
 }
 
-const UpdateBoard = () => {
+const isBoardNameEmpty = computed(() => !currentBoard.value.name.trim())
+const isAnyColumnEmpty = computed(() =>
+  currentBoard.value.columns.some((col) => !col.name?.trim())
+)
+const isBoardNameInvalid = computed(() => hasTriedSubmit.value && isBoardNameEmpty.value)
+const isColumnInvalid = (col) => hasTriedSubmit.value && !col.name?.trim()
 
-  if (currentBoard.value.name === '') {
+const UpdateBoard = () => {
+  hasTriedSubmit.value = true
+
+  if (isBoardNameEmpty.value || isAnyColumnEmpty.value) {
     isEmptyName.value = true
     return
   }
@@ -80,7 +91,7 @@ const UpdateBoard = () => {
           Can't be empty
         </span>
 
-        <input type="text" v-model="currentBoard.name">
+        <input type="text" v-model="currentBoard.name" :class="{ error: isBoardNameInvalid }">
 
       </div>
 
@@ -93,7 +104,7 @@ const UpdateBoard = () => {
 
           <div class="col-input" v-for="(col, index) in currentBoard.columns" :key="col.id">
 
-            <input type="text" v-model="col.name">
+            <input type="text" v-model="col.name" :class="{ error: isColumnInvalid(col) }">
 
             <button @click="RemoveColumn(index)">
               <IconCrossIcon />
@@ -147,7 +158,7 @@ const UpdateBoard = () => {
 .fields .columns .col-row .col-input input {
   width: 100%;
   height: 40px;
-  border: 1px solid var(--muted);
+  border: 1px solid var(--input-border);
   border-radius: 5px;
   padding-left: 10px;
 }
@@ -163,6 +174,28 @@ const UpdateBoard = () => {
 
 .fields .columns .col-row .col-input input {
   width: calc(100% - 40px);
+}
+
+.fields .columns .col-row .col-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fields .columns .col-row .col-input button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.fields .columns .col-row .col-input button:hover {
+  color: var(--danger);
+}
+
+.fields .board-name input.error,
+.fields .columns .col-row .col-input input.error {
+  border-color: var(--danger);
 }
 
 .btns button {

@@ -4,52 +4,52 @@ import { storeToRefs } from 'pinia'
 
 const boardStore = useBoardStore()
 const { selectedBoard } = storeToRefs(boardStore)
-// const props = defineProps({
 
-//   openViewTaskModal: {
-//     type: Boolean,
-//     default: false
-//   }
+// const emit = defineEmits(['open-task-modal', 'update:openCreateColumnModal'])
 
-// })
-const emit = defineEmits(['open-task-modal', 'update:openCreateColumnModal'])
+// const openCreateColumnModal = () => {
 
-// const isViewTask = ref(false)
-const openCreateColumnModal = () => {
+//   emit('update:openCreateColumnModal', true)
+// }
 
-  emit('update:openCreateColumnModal', true)
-}
 
+const isLoading = computed(() => boardStore.isLoading)
 </script>
 
 <template>
 
   <div class="home">
+    <div class="content">
 
-    <div class="no-selected-board" v-if="selectedBoard == null">
-      <p>
-        There is no board selected, please select one from the sidebar
-      </p>
-    </div>
-
-    <div class="columns" v-else-if="selectedBoard?.columns && selectedBoard.columns?.length > 0">
-      <Column v-for="column in selectedBoard.columns" :key="column?.id" :column="column"
-         />
-
-      <div class="add-column" @click="openCreateColumnModal">
-
+      <div class="no-selected-board" v-if="selectedBoard == null">
         <p>
-          + Add New Column
+          There is no board selected, please select one from the sidebar
         </p>
-
       </div>
+
+      <div class="columns" v-else-if="selectedBoard?.columns && selectedBoard.columns?.length > 0">
+        <Column v-for="column in selectedBoard.columns" :key="column?.id" :column="column" />
+
+        <div class="add-column" >
+
+          <button class="btn-primary" @click="boardStore.openCreateColumnModal()">
+            + Add New Column
+          </button>
+
+        </div>
+      </div>
+
+      <div class="no-columns" v-else>
+        <p>This board is empty. Create a new column to get started.</p>
+        <button class="btn-primary" @click="boardStore.openCreateColumnModal()">
+          + Add New Column
+        </button>
+      </div>
+
     </div>
 
-    <div class="no-columns" v-else>
-      <p>This board is empty. Create a new column to get started.</p>
-      <button class="btn-primary" @click="$emit('create-column-modal')">
-        + Add New Column
-      </button>
+    <div class="loading" v-if="isLoading">
+      <div class="spinner" />
     </div>
 
   </div>
@@ -57,11 +57,37 @@ const openCreateColumnModal = () => {
 </template>
 
 <style scoped>
+.loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  z-index: 30;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid color-mix(in srgb, var(--muted) 35%, transparent);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .home {
   height: 100%;
   width: 100%;
   min-width: 100%;
   padding: 20px;
+  position: relative;
   /* Let the outer `.main-content` scroll handle both axes. */
   overflow: visible;
 }
@@ -121,7 +147,6 @@ const openCreateColumnModal = () => {
   justify-content: center;
   height: 100%;
   text-align: center;
-
 }
 
 .no-columns p {

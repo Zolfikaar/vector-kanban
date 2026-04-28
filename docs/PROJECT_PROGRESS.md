@@ -11,15 +11,15 @@
 - [x] Edit Board
 - [x] Delete Board
 - [x] Add Column
-- [ ] Add Task
+- [x] Add Task
 - [x] Task Details
-- [ ] Subtasks
+- [x] Subtasks
 - [ ] Edit Task
-- [ ] Delete Task
+- [x] Delete Task
 
 ## Persistence
 
-- [ ] LocalStorage
+- [x] LocalStorage
 
 ## Bonus
 

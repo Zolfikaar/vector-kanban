@@ -4,6 +4,7 @@ export const useBoardStore = defineStore('board', {
   state: () => ({
     boards: [],
     
+    isLoading: false,
     selectedBoard: null,
     selectedTask: null,
     selectedColumn: null,
@@ -40,15 +41,15 @@ export const useBoardStore = defineStore('board', {
   actions: {
 
     async loadBoards() {
-
-      const savedBoards = localStorage.getItem('boards')
-
-      if (savedBoards) {
-        this.boards = JSON.parse(savedBoards)
-        return
-      }
+      this.isLoading = true
 
       try {
+        const savedBoards = localStorage.getItem('boards')
+
+        if (savedBoards) {
+          this.boards = JSON.parse(savedBoards)
+          return
+        }
 
         const response = await fetch('/data.json')
         const data = await response.json()
@@ -59,6 +60,8 @@ export const useBoardStore = defineStore('board', {
 
       } catch (error) {
         console.error(error)
+      } finally {
+        this.isLoading = false
       }
 
     },
@@ -115,6 +118,10 @@ export const useBoardStore = defineStore('board', {
 
       this.saveBoards()
 
+    },
+
+    openCreateColumnModal() {
+      this.isCreateColumnModalOpen = true
     },
 
     openTaskModal(task, column) {
@@ -201,7 +208,38 @@ export const useBoardStore = defineStore('board', {
       this.resetCreateTaskDraft(defaultStatus)
       this.selectedColumn = column
       this.isCreateTaskModalOpen = true
-    }
+    },
+
+    editTask(updatedTask) {
+      if (!this.selectedBoard || !this.selectedColumn || !this.selectedTask) return false
+
+      const taskIndex = this.selectedColumn.tasks.indexOf(this.selectedTask)
+
+      if (taskIndex !== -1) {
+        this.selectedColumn.tasks[taskIndex] = updatedTask
+        this.saveBoards()
+        // this.isEditTaskModalOpen = false
+        this.closeAllModals()
+        return true
+      }
+      return false
+    },
+
+    deleteTask() {
+      if (!this.selectedBoard || !this.selectedColumn || !this.selectedTask) return false
+
+      const taskIndex = this.selectedColumn.tasks.indexOf(this.selectedTask)
+
+      if (taskIndex !== -1) {
+        this.selectedColumn.tasks.splice(taskIndex, 1)
+        this.saveBoards()
+        // this.isDeleteTaskModalOpen = false
+        this.closeAllModals()
+        return true
+      }
+
+      return false
+    },
 
   }
 })

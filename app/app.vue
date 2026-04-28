@@ -65,13 +65,19 @@ onMounted(async () => {
   @click="boardStore.closeAllModals()"
 />
 
-<CreateBoard v-if="boardStore.isCreateBoardModalOpen" />
+<CreateBoard
+  v-if="boardStore.isCreateBoardModalOpen"
+  v-model:openCreateBoardModal="boardStore.isCreateBoardModalOpen"
+/>
 
 <DeleteBoard v-if="boardStore.isDeleteBoardModalOpen" />
 
 <EditBoard v-if="boardStore.isEditBoardModalOpen" />
 
-<CreateColumn v-if="boardStore.isCreateColumnModalOpen" />
+<CreateColumn
+  v-if="boardStore.isCreateColumnModalOpen"
+  v-model:openCreateColumnModal="boardStore.isCreateColumnModalOpen"
+/>
 
 <ViewTask v-if="boardStore.isViewTaskModalOpen" />
 
