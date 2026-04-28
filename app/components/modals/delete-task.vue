@@ -12,7 +12,7 @@ const boardStore = useBoardStore()
     <p class="medium">Are you sure you want to delete the <b>'{{ boardStore.selectedTask.title }}'</b> task and its subtasks? This action cannot be reversed.</p>
     
     <div class="btns">
-      <button class="delete-btn" @click="boardStore.boardStore.deleteBoard(boardStore.selectedBoard)">Delete</button>
+      <button class="delete-btn" @click="boardStore.deleteBoard(boardStore.selectedBoard)">Delete</button>
       <button class="cancel-btn secondary-btn" @click="boardStore.closeAllModals()">Cancel</button>
     </div>
 

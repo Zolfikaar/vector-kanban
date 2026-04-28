@@ -1,71 +1,34 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useBoardStore } from '~/stores/board'
 
 const boardStore = useBoardStore()
-const selectedBoard = computed(() => boardStore.selectedBoard)
 
-const emit = defineEmits(['update:openCreateTaskModal'])
+const isTitleInvalid = ref(false)
+const areAllSubtasksEmpty = computed(() =>
+  boardStore.createTaskDraft.subtasks.every((subtask) => !subtask.trim())
+)
 
-const props = defineProps({
-  openCreateTaskModal: {
-    type: Boolean,
-    default: false
-  }
-})
-
-const closeCreateTaskModal = () => {
-  emit('update:openCreateTaskModal', false)
+const addNewSubtask = () => {
+  boardStore.createTaskDraft.subtasks.push('')
 }
 
-const isEmptyName = ref(false)
-
-const subtasks = ref([
-  {
-    id: crypto.randomUUID(),
-    name: '',
-    tasks: []
-  }
-])
-
-watch(() => props.openCreateTaskModal, (val) => {
-  if (val) {
-    subtasks.value = [{
-      id: crypto.randomUUID(),
-      name: '',
-      tasks: []
-    }]
-  }
-})
-
-
-const AddNewSubtask = () => {
-  subtasks.value.push({
-    id: crypto.randomUUID(),
-    name: '',
-    tasks: []
-  })
-}
-
-const RemoveSubtask = (index) => {
-  subtasks.value.splice(index, 1)
-}
-
-const AddTask = () => {
-
-  if (subtasks.value.some(col => col.name.trim() === '')) {
-    isEmptyName.value = true
+const removeSubtask = (index) => {
+  if (boardStore.createTaskDraft.subtasks.length === 1) {
+    boardStore.createTaskDraft.subtasks[0] = ''
     return
   }
 
-  isEmptyName.value = false
-
-  boardStore.addColumnToBoard(subtasks.value)
-
-  closeCreateTaskModal()
-  subtasks.value = []
+  boardStore.createTaskDraft.subtasks.splice(index, 1)
 }
 
+const submitTask = () => {
+  isTitleInvalid.value = !boardStore.createTaskDraft.title.trim()
+
+  if (isTitleInvalid.value) return
+
+  boardStore.createTask()
+}
 </script>
 
 <template>
@@ -73,18 +36,27 @@ const AddTask = () => {
 
     <h1>Add New Task</h1>
 
-    <form @submit.prevent="boardStore.boardStore.createTask()">
+    <form @submit.prevent="submitTask">
       <div class="input-row">
 
         <label >Title</label>
-        <input type="text" placeholder="e.g. Take coffee break" v-model="boardStore.newTaskTitle" required />
+        <input
+          v-model="boardStore.createTaskDraft.title"
+          type="text"
+          placeholder="e.g. Take coffee break"
+          :class="{ error: isTitleInvalid }"
+          required
+        />
       </div>
 
       <div class="input-row">
 
         <label >Description</label>
-        <textarea rows="5" placeholder="e.g. It’s always good to take a break. This 15 minute break will 
-recharge the batteries a little." v-model="boardStore.newTaskDescription"></textarea>
+        <textarea
+          v-model="boardStore.createTaskDraft.description"
+          rows="5"
+          placeholder="Task Description"
+        />
       </div>
 
       <div class="subtasks">
@@ -93,11 +65,19 @@ recharge the batteries a little." v-model="boardStore.newTaskDescription"></text
 
           <label class="">Subtasks</label>
 
-          <div class="col-input" v-for="subtask in subtasks" :key="subtask.id">
+          <div
+            v-for="(subtask, index) in boardStore.createTaskDraft.subtasks"
+            :key="index"
+            class="col-input"
+          >
 
-            <input type="text" v-model="subtask.name"  :class="{ error: !subtask.name.trim() }">
+            <input
+              v-model="boardStore.createTaskDraft.subtasks[index]"
+              type="text"
+              :class="{ error: !subtask.trim() && !areAllSubtasksEmpty }"
+            >
 
-            <button @click="RemoveSubtask(subtask.id)">
+            <button type="button" @click="removeSubtask(index)">
               <IconCrossIcon />
             </button>
 
@@ -107,13 +87,13 @@ recharge the batteries a little." v-model="boardStore.newTaskDescription"></text
         
       </div>
 
-      <button class="add-subtask-btn" @click="AddNewSubtask">
+      <button type="button" class="add-subtask-btn" @click="addNewSubtask">
         + Add New Subtask
       </button>
 
       <div class="status">
         <label>Status</label>
-        <select v-model="boardStore.newTaskStatus" @change="updateTaskStatus">
+        <select v-model="boardStore.createTaskDraft.status">
 
           <option v-for="col in boardStore.selectedBoard.columns" :key="col.id" :value="col.name">
             {{ col.name }}
@@ -123,7 +103,7 @@ recharge the batteries a little." v-model="boardStore.newTaskDescription"></text
         </select>
       </div>
 
-      <button class="createTaskBtn btn-primary" type="submit">Create Task</button>
+      <button type="submit" class="createTaskBtn btn-primary">Create Task</button>
 
     </form>
     
@@ -131,10 +111,9 @@ recharge the batteries a little." v-model="boardStore.newTaskDescription"></text
 </template>
 
 <style scoped>
-.create-task h1{}
 .create-task form {
   display: flex;
-  gap: 20px;
+  gap: 10px;
   flex-direction: column;
 }
 .create-task form .input-row{
@@ -144,14 +123,10 @@ recharge the batteries a little." v-model="boardStore.newTaskDescription"></text
   margin-bottom: 1.5rem;
 }
 
-.create-task form input{
-  
-}
 .create-task form textarea{
-  
+  resize: none;
 }
-.create-task form .subtasks{}
-.create-task form .subtasks .col-row{}
+
 .create-task form .status label,
 .create-task form .subtasks .col-row label{
   margin-bottom: 10px;
@@ -173,15 +148,11 @@ recharge the batteries a little." v-model="boardStore.newTaskDescription"></text
   height: 2rem;
   padding-top: 7px;
 }
-.create-task form .add-subtask-btn{}
-.create-task form .status{}
-.create-task form .status h3{}
+
 .create-task form .status select{
   width: 100%;
   height: 40px;
 }
-.create-task form .status select option{}
-
 
 .create-task form .subtasks .col-row label,
 .create-task form .status label,
@@ -200,9 +171,6 @@ recharge the batteries a little." v-model="boardStore.newTaskDescription"></text
   border-radius: 4px;
 }
 
-
-
-.create-task form .createTaskBtn{}
 .create-task form .add-subtask-btn{
   width: 100%;
   height: 40px;

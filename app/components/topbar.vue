@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useBoardStore } from '~/stores/board'
 import { storeToRefs } from 'pinia'
 
-const emit = defineEmits(['update:openDeleteBoardModal', 'update:openEditBoardModal', 'update:openCreateTaskModal'])
+const emit = defineEmits(['update:openDeleteBoardModal', 'update:openEditBoardModal'])
 
 const boardStore = useBoardStore()
 const { selectedBoard } = storeToRefs(boardStore)
@@ -21,10 +21,6 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  openCreateTaskModal: {
-    type: Boolean,
-    default: false
-  }
 })
 
 const showDetailsBox = ref(false)
@@ -49,8 +45,8 @@ function editSelectedBoard() {
 
 }
 
-function AddNewTask() {
-  emit('update:openCreateTaskModal', true)
+function openCreateTaskModal() {
+  boardStore.openCreateTaskModal()
 }
 
 const topbarRef = ref(null)
@@ -81,7 +77,7 @@ onMounted(() => {
 
       <div class="action-btns" :class="selectedBoard == null ? 'inactive' : ''">
 
-        <button class="btn-primary" @click="AddNewTask">
+        <button class="btn-primary" @click="openCreateTaskModal">
           <IconAddTaskMobileIcon width="20" height="20" />
           Add New Task
         </button>

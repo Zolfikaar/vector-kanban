@@ -19,13 +19,13 @@ const dropdown = ref(null)
 const ToggleShowMoreBtn = () => showDetailsBox.value = !showDetailsBox.value
 
 function deleteSelectedTask() {
-  boardStore.isTaskModalOpen = false
-  boardStore.isDeleteTaskOpen = true
+  boardStore.isViewTaskModalOpen = false
+  boardStore.isDeleteTaskModalOpen = true
   showDetailsBox.value = false
 }
 function editSelectedTask() {
-  boardStore.isTaskModalOpen = false
-  boardStore.isEditTaskOpen = true
+  boardStore.isViewTaskModalOpen = false
+  boardStore.isEditTaskModalOpen = true
   showDetailsBox.value = false
 }
 

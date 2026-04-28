@@ -26,16 +26,15 @@ onMounted(async () => {
 
   <Topbar
     v-model:hidden="isSidebarHidden"
-    v-model:openDeleteBoardModal="boardStore.isDeleteBoardOpen"
-    v-model:openEditBoardModal="boardStore.isEditBoardOpen"
-    v-model:openCreateTaskModal="boardStore.isCreateTaskOpen"
+    v-model:openDeleteBoardModal="boardStore.isDeleteBoardModalOpen"
+    v-model:openEditBoardModal="boardStore.isEditBoardModalOpen"
   />
 
   <section class="content-shell">
 
     <Sidebar
       v-model:hidden="isSidebarHidden"
-      v-model:openCreateBoardModal="boardStore.isCreateBoardOpen"
+      v-model:openCreateBoardModal="boardStore.isCreateBoardModalOpen"
     />
 
     <section class="main-area">
@@ -50,7 +49,7 @@ onMounted(async () => {
 
       <div class="main-content">
         <Home
-          v-model:openCreateColumnModal="boardStore.isCreateColumnOpen"
+          v-model:openCreateColumnModal="boardStore.isCreateColumnModalOpen"
         />
       </div>
 
@@ -66,21 +65,21 @@ onMounted(async () => {
   @click="boardStore.closeAllModals()"
 />
 
-<CreateBoard v-if="boardStore.isCreateBoardOpen" />
+<CreateBoard v-if="boardStore.isCreateBoardModalOpen" />
 
-<DeleteBoard v-if="boardStore.isDeleteBoardOpen" />
+<DeleteBoard v-if="boardStore.isDeleteBoardModalOpen" />
 
-<EditBoard v-if="boardStore.isEditBoardOpen" />
+<EditBoard v-if="boardStore.isEditBoardModalOpen" />
 
-<CreateColumn v-if="boardStore.isCreateColumnOpen" />
+<CreateColumn v-if="boardStore.isCreateColumnModalOpen" />
 
-<ViewTask v-if="boardStore.isTaskModalOpen" />
+<ViewTask v-if="boardStore.isViewTaskModalOpen" />
 
-<EditTask v-if="boardStore.isEditTaskOpen" />
+<EditTask v-if="boardStore.isEditTaskModalOpen" />
 
-<DeleteTask v-if="boardStore.isDeleteTaskOpen" />
+<DeleteTask v-if="boardStore.isDeleteTaskModalOpen" />
 
-<CreateTask v-if="boardStore.isCreateTaskOpen" />
+<CreateTask v-if="boardStore.isCreateTaskModalOpen" />
 
 </template>
 

@@ -61,9 +61,12 @@ const createBoard = () => {
 
     <div class="header">
       <h1>Add New Board</h1>
-      <button class="close-btn" @click="closeCreateBoardModal">
-        <IconCrossIcon />
-      </button>
+
+      <!--
+        <button class="close-btn" @click="closeCreateBoardModal">
+          <IconCrossIcon />
+        </button>
+        -->
     </div>
 
     <div class="fields">
@@ -88,7 +91,7 @@ const createBoard = () => {
 
             <input type="text" v-model="col.name" :class="{ error: !col.name.trim() }">
 
-            <button @click="RemoveColumn(col.id)">
+            <button class="remove-btn" @click="RemoveColumn(col.id)">
               <IconCrossIcon />
             </button>
 
@@ -141,7 +144,19 @@ const createBoard = () => {
 }
 
 .col-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin-bottom: 10px;
+}
+
+.col-input .remove-btn{
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 2rem;
+  height: 2rem;
+  padding-top: 7px;
 }
 
 .col-input input {

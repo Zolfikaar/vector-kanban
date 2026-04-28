@@ -4,19 +4,14 @@ import { useBoardStore } from '~/stores/board'
 const boardStore = useBoardStore()
 // const { selectedBoard } = storeToRefs(boardStore)
 import { computed } from 'vue'
-// const emit = defineEmits(['update:openViewTaskModal'])
 
 const props = defineProps({
   column: {
     type: Object,
     required: true
   }, 
-  // openViewTaskModal: {
-  //   type: Boolean,
-  //   default: false
-  // }
+
 })
-// const isViewTask = ref(false)
 
 const colors = [
   { name: 'default', color: '#000000' },
@@ -59,19 +54,6 @@ const columnColor = computed(() => {
   return match ? match.color : '#000000'
 })
 
-// watch(isViewTask.value, (newValue) => {
-//   if (newValue) {
-//     console.log('View Task Modal is Shown', isViewTask.value);
-
-//   } else {
-//     console.log('View Task Modal is Hidden', isViewTask.value);
-//   }
-// })
-
-// const openTask = () => {
-//   isViewTask.value = true
-//   emit('update:openViewTaskModal', true)
-// }
 
 </script>
 
@@ -92,7 +74,7 @@ const columnColor = computed(() => {
 
     <div class="no-task" v-else>
       <p>No tasks in this column. Add a new task to get started.</p>
-      <button class="btn-primary">
+      <button class="btn-primary" @click="boardStore.openCreateTaskModal(column)">
         + Add New Task
       </button>
     </div>

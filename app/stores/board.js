@@ -8,31 +8,33 @@ export const useBoardStore = defineStore('board', {
     selectedTask: null,
     selectedColumn: null,
 
-    isTaskModalOpen: false,
-    isCreateBoardOpen: false,
-    isDeleteBoardOpen: false,
-    isEditBoardOpen: false,
-    isCreateColumnOpen: false,
-    isEditTaskOpen: false,
-    isDeleteTaskOpen: false,
-    isCreateTaskOpen: false,
+    isViewTaskModalOpen: false,
+    isCreateBoardModalOpen: false,
+    isDeleteBoardModalOpen: false,
+    isEditBoardModalOpen: false,
+    isCreateColumnModalOpen: false,
+    isEditTaskModalOpen: false,
+    isDeleteTaskModalOpen: false,
+    isCreateTaskModalOpen: false,
 
-    newTaskTitle: '',
-    newTaskDescription: '',
-    newTaskSubtasks: [],
-    newTaskStatus: null
+    createTaskDraft: {
+      title: '',
+      description: '',
+      status: null,
+      subtasks: ['']
+    }
   }),
 
   getters: {
     isOverlayActive: (state) =>
-      state.isTaskModalOpen ||
-      state.isCreateBoardOpen ||
-      state.isDeleteBoardOpen ||
-      state.isEditBoardOpen ||
-      state.isCreateColumnOpen ||
-      state.isEditTaskOpen ||
-      state.isDeleteTaskOpen ||
-      state.isCreateTaskOpen
+      state.isViewTaskModalOpen ||
+      state.isCreateBoardModalOpen ||
+      state.isDeleteBoardModalOpen ||
+      state.isEditBoardModalOpen ||
+      state.isCreateColumnModalOpen ||
+      state.isEditTaskModalOpen ||
+      state.isDeleteTaskModalOpen ||
+      state.isCreateTaskModalOpen
   },
 
   actions: {
@@ -119,53 +121,77 @@ export const useBoardStore = defineStore('board', {
 
       this.selectedTask = task
       this.selectedColumn = column
-      this.isTaskModalOpen = true
+      this.isViewTaskModalOpen = true
 
+    },
+
+    resetCreateTaskDraft(status = null) {
+      this.createTaskDraft = {
+        title: '',
+        description: '',
+        status,
+        subtasks: ['']
+      }
     },
 
     closeAllModals() {
 
-      this.isTaskModalOpen = false
-      this.isCreateBoardOpen = false
-      this.isDeleteBoardOpen = false
-      this.isEditBoardOpen = false
-      this.isCreateColumnOpen = false
-      this.isEditTaskOpen = false
-      this.isDeleteTaskOpen = false
-      this.isCreateTaskOpen = false
+      this.isViewTaskModalOpen = false
+      this.isCreateBoardModalOpen = false
+      this.isDeleteBoardModalOpen = false
+      this.isEditBoardModalOpen = false
+      this.isCreateColumnModalOpen = false
+      this.isEditTaskModalOpen = false
+      this.isDeleteTaskModalOpen = false
+      this.isCreateTaskModalOpen = false
 
     },
 
-    resetNewTaskData() {
-
-      this.newTaskTitle = ''
-      this.newTaskDescription = ''
-      this.newTaskSubtasks = []
-      this.newTaskStatus = null
-      this.isCreateTaskOpen = false
+    closeCreateTaskModal() {
+      this.resetCreateTaskDraft()
+      this.isCreateTaskModalOpen = false
     },
 
     createTask() {
-      if (!this.newTaskTitle || !this.newTaskStatus) return
+      const title = this.createTaskDraft.title.trim()
+      const status = this.createTaskDraft.status
+
+      if (!this.selectedBoard || !title || !status) return false
+
+      const targetColumn = this.selectedBoard.columns.find((column) => column.name === status)
+
+      if (!targetColumn) return false
+      if (!Array.isArray(targetColumn.tasks)) {
+        targetColumn.tasks = []
+      }
 
       const newTask = {
-        title: this.newTaskTitle,
-        description: this.newTaskDescription,
-        subtasks: this.newTaskSubtasks.map((subtask) => ({
-          title: subtask,
-          isCompleted: false
-        }))
+        title,
+        description: this.createTaskDraft.description.trim(),
+        status,
+        subtasks: this.createTaskDraft.subtasks
+          .map((subtaskTitle) => subtaskTitle.trim())
+          .filter(Boolean)
+          .map((subtaskTitle) => ({
+            title: subtaskTitle,
+            isCompleted: false
+          }))
       }
 
-      const column = this.selectedBoard.columns.find(col => col.name === this.newTaskStatus)
+      targetColumn.tasks.push(newTask)
+      this.saveBoards()
+      this.closeCreateTaskModal()
 
-      if (column) {
-        column.tasks.push(newTask)
-        this.saveBoards()
-      }
-
-      this.resetNewTaskData()
+      return true
     },
+
+    openCreateTaskModal(column = null) {
+      const defaultStatus = column?.name ?? this.selectedBoard?.columns?.[0]?.name ?? null
+
+      this.resetCreateTaskDraft(defaultStatus)
+      this.selectedColumn = column
+      this.isCreateTaskModalOpen = true
+    }
 
   }
 })
