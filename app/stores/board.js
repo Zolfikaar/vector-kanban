@@ -125,6 +125,16 @@ export const useBoardStore = defineStore('board', {
 
     },
 
+    toggleSelectedTaskSubtask(subtaskIndex) {
+      if (!this.selectedTask?.subtasks?.[subtaskIndex]) return false
+
+      this.selectedTask.subtasks[subtaskIndex].isCompleted =
+        !this.selectedTask.subtasks[subtaskIndex].isCompleted
+
+      this.saveBoards()
+      return true
+    },
+
     resetCreateTaskDraft(status = null) {
       this.createTaskDraft = {
         title: '',

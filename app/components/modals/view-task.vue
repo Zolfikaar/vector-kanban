@@ -18,6 +18,10 @@ const dropdown = ref(null)
 
 const ToggleShowMoreBtn = () => showDetailsBox.value = !showDetailsBox.value
 
+const toggleSubtask = (subtaskIndex) => {
+  boardStore.toggleSelectedTaskSubtask(subtaskIndex)
+}
+
 function deleteSelectedTask() {
   boardStore.isViewTaskModalOpen = false
   boardStore.isDeleteTaskModalOpen = true
@@ -74,8 +78,12 @@ const { selectedTask: task, selectedColumn: column } = storeToRefs(boardStore)
     <div class="subtasks">
       <h3>Subtasks ({{task.subtasks.filter((st) => st.isCompleted).length}} of {{ task.subtasks?.length }})</h3>
       <ul>
-        <li v-for="subtask in task.subtasks" :key="subtask.id" :class="{ completed: subtask.isCompleted }">
-          <input type="checkbox" :checked="subtask.isCompleted" @change="toggleSubtask(subtask.id)" />
+        <li
+          v-for="(subtask, index) in task.subtasks"
+          :key="subtask.id ?? `${subtask.title}-${index}`"
+          :class="{ completed: subtask.isCompleted }"
+        >
+          <input type="checkbox" :checked="subtask.isCompleted" @change="toggleSubtask(index)" />
           {{ subtask.title }}
         </li>
 
