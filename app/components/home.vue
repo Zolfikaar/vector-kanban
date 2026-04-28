@@ -131,6 +131,7 @@ const isLoading = computed(() => boardStore.isLoading)
 .add-column p {
   color: var(--muted);
   font-size: 1.1rem;
+  font-weight: 700;
 }
 
 .add-column:hover p {
