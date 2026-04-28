@@ -14,7 +14,7 @@
 - [x] Add Task
 - [x] Task Details
 - [x] Subtasks
-- [ ] Edit Task
+- [x] Edit Task
 - [x] Delete Task
 
 ## Persistence

@@ -213,12 +213,27 @@ export const useBoardStore = defineStore('board', {
     editTask(updatedTask) {
       if (!this.selectedBoard || !this.selectedColumn || !this.selectedTask) return false
 
-      const taskIndex = this.selectedColumn.tasks.indexOf(this.selectedTask)
+      const sourceColumn = this.selectedColumn
+      const taskIndex = sourceColumn.tasks.indexOf(this.selectedTask)
+      const targetColumn =
+        this.selectedBoard.columns.find((column) => column.name === updatedTask.status) ||
+        sourceColumn
 
       if (taskIndex !== -1) {
-        this.selectedColumn.tasks[taskIndex] = updatedTask
+        if (!Array.isArray(targetColumn.tasks)) {
+          targetColumn.tasks = []
+        }
+
+        if (targetColumn === sourceColumn) {
+          sourceColumn.tasks[taskIndex] = updatedTask
+        } else {
+          sourceColumn.tasks.splice(taskIndex, 1)
+          targetColumn.tasks.push(updatedTask)
+          this.selectedColumn = targetColumn
+        }
+
+        this.selectedTask = updatedTask
         this.saveBoards()
-        // this.isEditTaskModalOpen = false
         this.closeAllModals()
         return true
       }

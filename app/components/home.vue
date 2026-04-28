@@ -22,11 +22,11 @@ const isLoading = computed(() => boardStore.isLoading)
       <div class="columns" v-else-if="selectedBoard?.columns && selectedBoard.columns?.length > 0">
         <Column v-for="column in selectedBoard.columns" :key="column?.id" :column="column" />
 
-        <div class="add-column" >
+        <div class="add-column" @click="boardStore.openCreateColumnModal()">
 
-          <button class="btn-primary" @click="boardStore.openCreateColumnModal()">
+          <p>
             + Add New Column
-          </button>
+          </p>
 
         </div>
       </div>
@@ -91,6 +91,10 @@ const isLoading = computed(() => boardStore.isLoading)
   justify-content: center;
 }
 
+.content {
+  height: 100%;
+}
+
 .columns {
   display: flex;
   gap: 20px;
@@ -104,6 +108,8 @@ const isLoading = computed(() => boardStore.isLoading)
 }
 
 .add-column {
+  /* Match board columns visual height (account for heading offset). */
+  height: calc(100% - 55px);
   width: 280px;
   /* Keep this fixed so it contributes to horizontal overflow. */
   flex: 0 0 280px;
@@ -111,7 +117,6 @@ const isLoading = computed(() => boardStore.isLoading)
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
   background-color: var(--newColumn-bg);
   z-index: 1;
   border-radius: 6px;
