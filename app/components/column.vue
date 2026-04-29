@@ -151,4 +151,11 @@ const columnColor = computed(() => {
   flex-direction: column;
   align-items: center;
 }
+
+@media (max-width: 1100px) {
+  .column {
+    width: 280px;
+    flex-basis: 280px;
+  }
+}
 </style>

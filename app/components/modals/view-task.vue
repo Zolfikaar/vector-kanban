@@ -22,6 +22,23 @@ const toggleSubtask = (subtaskIndex) => {
   boardStore.toggleSelectedTaskSubtask(subtaskIndex)
 }
 
+const updateTaskStatus = () => {
+  if (!task.value || !column.value || !selectedBoard.value) return
+  if (task.value.status === column.value.name) return
+
+  const sourceColumn = column.value
+  const destinationColumn = selectedBoard.value.columns.find((col) => col.name === task.value.status)
+  if (!destinationColumn || destinationColumn === sourceColumn) return
+
+  const taskIndex = sourceColumn.tasks.indexOf(task.value)
+  if (taskIndex === -1) return
+
+  sourceColumn.tasks.splice(taskIndex, 1)
+  destinationColumn.tasks.push(task.value)
+  column.value = destinationColumn
+  boardStore.saveBoards()
+}
+
 function deleteSelectedTask() {
   boardStore.isViewTaskModalOpen = false
   boardStore.isDeleteTaskModalOpen = true
@@ -203,5 +220,22 @@ const { selectedTask: task, selectedColumn: column } = storeToRefs(boardStore)
 
 .details-box .delete:hover {
   color: var(--danger-hover);
+}
+
+@media (max-width: 768px) {
+  .task-header h2 {
+    margin: 0;
+    font-size: 22px;
+    line-height: 1.3;
+  }
+
+  .task-description {
+    margin: 20px 0 24px;
+  }
+
+  .details-box {
+    top: 52px;
+    right: 0;
+  }
 }
 </style>

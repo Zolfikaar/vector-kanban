@@ -48,7 +48,7 @@ const submitTask = () => {
         <input
           v-model="boardStore.createTaskDraft.title"
           type="text"
-          placeholder=""
+          placeholder="e.g. Take coffee break"
           :class="{ error: isTitleInvalid }"
         />
       </div>

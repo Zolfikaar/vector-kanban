@@ -141,4 +141,14 @@ onMounted(async () => {
   min-width: 0;
   overflow: auto;
 }
+
+@media (max-width: 768px) {
+  .main-area {
+    border-radius: 0;
+  }
+
+  .show-sidebar {
+    display: none;
+  }
+}
 </style>

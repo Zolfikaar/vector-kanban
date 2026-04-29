@@ -152,4 +152,45 @@ const isLoading = computed(() => boardStore.isLoading)
   color: var(--muted);
   margin-bottom: 20px;
 }
+
+@media (max-width: 1100px) {
+  .home {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .home {
+    padding: 16px;
+  }
+
+  .columns {
+    gap: 16px;
+  }
+
+  .add-column {
+    width: 280px;
+    flex-basis: 280px;
+    margin-right: 16px;
+  }
+
+  .no-columns {
+    justify-content: flex-start;
+    padding-top: 28vh;
+  }
+
+  .no-columns p {
+    font-size: 1.75rem;
+    line-height: 1.2;
+    max-width: 320px;
+  }
+
+  .no-columns .btn-primary {
+    width: 264px;
+    height: 48px;
+    justify-content: center;
+    border-radius: 24px;
+    font-size: 1.125rem;
+  }
+}
 </style>

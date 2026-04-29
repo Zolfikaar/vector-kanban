@@ -226,4 +226,37 @@ html.dark .board-item:not(.active):hover {
   flex-shrink: 0;
   margin-top: 15px;
 }
+
+@media (max-width: 1100px) {
+  .sidebar {
+    width: 260px;
+    flex-basis: 260px;
+  }
+
+  .all-boards {
+    margin-left: 24px;
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+
+  .board-item {
+    padding-left: 24px;
+    max-width: 236px;
+  }
+
+  .theme-controls {
+    margin: 0 24px;
+  }
+
+  .toggle-sidebar {
+    padding-left: 24px;
+    max-width: 236px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+}
 </style>
