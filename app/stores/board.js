@@ -17,6 +17,7 @@ export const useBoardStore = defineStore('board', {
     isEditTaskModalOpen: false,
     isDeleteTaskModalOpen: false,
     isCreateTaskModalOpen: false,
+    isActiveMobileOverlay: false,
 
     createTaskDraft: {
       title: '',
@@ -161,6 +162,7 @@ export const useBoardStore = defineStore('board', {
       this.isEditTaskModalOpen = false
       this.isDeleteTaskModalOpen = false
       this.isCreateTaskModalOpen = false
+      this.isActiveMobileOverlay = false
 
     },
 

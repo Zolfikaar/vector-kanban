@@ -91,8 +91,8 @@ const AddColumn = () => {
 
             <input type="text" placeholder="e.g. Todo" v-model="col.name" :class="{ error: isColumnInvalid(col) }" />
 
-            <button @click="RemoveColumn(index)">
-              <IconCrossIcon />
+            <button type="button" @click="RemoveColumn(index)">
+              <Icon name="icon-cross" :size="16" />
             </button>
 
           </div>
@@ -169,6 +169,12 @@ const AddColumn = () => {
   border: none;
   cursor: pointer;
   color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-width: 2rem;
+  min-height: 2rem;
 }
 
 .fields .columns .col-row .col-input button:hover {
@@ -211,78 +217,4 @@ html.dark .btns .add-column-btn:hover {
   color: white;
 }
 
-/*
-.close-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent;
-  border: .5px solid var(--danger-hover);
-}
-
-.close-btn:hover {
-  cursor: pointer;
-  border-color: var(--danger);
-}
-
-.close-btn svg {
-  margin-top: 5px;
-  color: var(--danger);
-}
-
-.close-btn:hover svg {
-  color: var(--danger-hover);
-  
-}
-
-.name-field {
-  margin-bottom: 15px;
-}
-
-.name-field input {
-  height: 40px;
-  width: 100%;
-  margin-top: 10px;
-  border-radius: 5px;
-  border: 1px solid var(--muted);
-}
-
-.columns .column-row {
-  margin-bottom: 10px;
-}
-
-.columns .column-row input {
-  margin-top: 10px;
-  height: 40px;
-  border: 1px solid var(--muted);
-  border-radius: 5px;
-  width: calc(100% - 30px);
-}
-
-.add-column-btn,
-.create-btn {
-  height: 40px;
-}
-
-.add-column-btn {
-  color: var(--primary);
-  background-color: #625fc719;
-  border-radius: 50px;
-  border: none;
-}
-
-.add-column-btn:hover {
-  cursor: pointer;
-}
-
-.create-btn {
-
-margin-top: 15px;
-display: flex;
-justify-content: center;
-}
-*/
 </style>

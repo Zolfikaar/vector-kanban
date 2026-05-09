@@ -22,70 +22,51 @@ onMounted(async () => {
 
 <template>
 
-<section class="app-shell">
+  <section class="app-shell">
 
-  <Topbar
-    v-model:hidden="isSidebarHidden"
-    v-model:openDeleteBoardModal="boardStore.isDeleteBoardModalOpen"
-    v-model:openEditBoardModal="boardStore.isEditBoardModalOpen"
-  />
+    <Topbar v-model:hidden="isSidebarHidden" v-model:openDeleteBoardModal="boardStore.isDeleteBoardModalOpen"
+      v-model:openEditBoardModal="boardStore.isEditBoardModalOpen"
+      v-model:openMobileBoardsDropdown="boardStore.isActiveMobileOverlay" />
 
-  <section class="content-shell">
+    <section class="content-shell">
 
-    <Sidebar
-      v-model:hidden="isSidebarHidden"
-      v-model:openCreateBoardModal="boardStore.isCreateBoardModalOpen"
-    />
+      <Sidebar v-model:hidden="isSidebarHidden" v-model:openCreateBoardModal="boardStore.isCreateBoardModalOpen" />
 
-    <section class="main-area">
+      <section class="main-area">
 
-      <div
-        class="show-sidebar"
-        @click="showSidebar"
-        v-if="isSidebarHidden"
-      >
-        <IconShowSidebarIcon />
-      </div>
+        <div class="show-sidebar" @click="showSidebar" v-if="isSidebarHidden">
+          <Icon name="icon-show-sidebar" :size="20" />
+        </div>
 
-      <div class="main-content">
-        <Home
-          v-model:openCreateColumnModal="boardStore.isCreateColumnModalOpen"
-        />
-      </div>
+        <div class="main-content">
+          <Home v-model:openCreateColumnModal="boardStore.isCreateColumnModalOpen" />
+        </div>
+
+      </section>
 
     </section>
 
   </section>
 
-</section>
+  <section class="overlay" :class="{ isactive: boardStore.isOverlayActive }" @click="boardStore.closeAllModals()" />
 
-<section
-  class="overlay"
-  :class="{ isactive: boardStore.isOverlayActive }"
-  @click="boardStore.closeAllModals()"
-/>
+  <CreateBoard v-if="boardStore.isCreateBoardModalOpen"
+    v-model:openCreateBoardModal="boardStore.isCreateBoardModalOpen" />
 
-<CreateBoard
-  v-if="boardStore.isCreateBoardModalOpen"
-  v-model:openCreateBoardModal="boardStore.isCreateBoardModalOpen"
-/>
+  <DeleteBoard v-if="boardStore.isDeleteBoardModalOpen" />
 
-<DeleteBoard v-if="boardStore.isDeleteBoardModalOpen" />
+  <EditBoard v-if="boardStore.isEditBoardModalOpen" />
 
-<EditBoard v-if="boardStore.isEditBoardModalOpen" />
+  <CreateColumn v-if="boardStore.isCreateColumnModalOpen"
+    v-model:openCreateColumnModal="boardStore.isCreateColumnModalOpen" />
 
-<CreateColumn
-  v-if="boardStore.isCreateColumnModalOpen"
-  v-model:openCreateColumnModal="boardStore.isCreateColumnModalOpen"
-/>
+  <ViewTask v-if="boardStore.isViewTaskModalOpen" />
 
-<ViewTask v-if="boardStore.isViewTaskModalOpen" />
+  <EditTask v-if="boardStore.isEditTaskModalOpen" />
 
-<EditTask v-if="boardStore.isEditTaskModalOpen" />
+  <DeleteTask v-if="boardStore.isDeleteTaskModalOpen" />
 
-<DeleteTask v-if="boardStore.isDeleteTaskModalOpen" />
-
-<CreateTask v-if="boardStore.isCreateTaskModalOpen" />
+  <CreateTask v-if="boardStore.isCreateTaskModalOpen" />
 
 </template>
 
@@ -95,7 +76,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   position: relative;
-  z-index: 1;
+  z-index: auto;
 }
 
 .content-shell {
@@ -120,7 +101,6 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-top: 15px;
   border-bottom-right-radius: 50px;
   border-top-right-radius: 50px;
   position: absolute;

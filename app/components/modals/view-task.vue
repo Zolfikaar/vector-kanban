@@ -78,8 +78,8 @@ const { selectedTask: task, selectedColumn: column } = storeToRefs(boardStore)
       <h2>{{ task.title }}</h2>
       <div class="dropdown" ref="dropdown">
 
-        <button class="show-more" @click.stop="ToggleShowMoreBtn">
-          <IconVerticalEllipsisIcon />
+        <button type="button" class="show-more" @click.stop="ToggleShowMoreBtn">
+          <Icon name="icon-vertical-ellipsis" :size="20" />
         </button>
 
         <div v-if="showDetailsBox" class="details-box">
@@ -131,9 +131,18 @@ const { selectedTask: task, selectedColumn: column } = storeToRefs(boardStore)
 }
 
 .show-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   cursor: pointer;
+  padding: 0;
+  color: var(--muted);
+}
+
+.show-more:hover {
+  color: var(--text);
 }
 
 .task-description,

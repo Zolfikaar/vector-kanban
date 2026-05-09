@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { useBoardStore } from '~/stores/board'
 
 const boardStore = useBoardStore()
@@ -77,7 +77,7 @@ const UpdateBoard = () => {
       <h1>Edit Board</h1>
 
       <button class="close-btn" @click="boardStore.closeAllModals()">
-        <IconCrossIcon />
+        <Icon name="icon-cross" :size="18" />
       </button>
     </div>
 
@@ -106,8 +106,8 @@ const UpdateBoard = () => {
 
             <input type="text" v-model="col.name" :class="{ error: isColumnInvalid(col) }">
 
-            <button @click="RemoveColumn(index)">
-              <IconCrossIcon />
+            <button type="button" @click="RemoveColumn(index)">
+              <Icon name="icon-cross" :size="16" />
             </button>
 
           </div>
@@ -141,6 +141,21 @@ const UpdateBoard = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.header .close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--muted);
+}
+
+.header .close-btn:hover {
+  color: var(--danger);
 }
 
 .fields .board-name {
@@ -187,6 +202,12 @@ const UpdateBoard = () => {
   border: none;
   cursor: pointer;
   color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-width: 2rem;
+  min-height: 2rem;
 }
 
 .fields .columns .col-row .col-input button:hover {

@@ -58,17 +58,15 @@ const createBoard = () => {
 
           <h3 class="board-item " :class="{ active: boardStore.selectedBoard?.name === board.name }"
             @click="boardStore.selectBoard(board)">
-            <IconBoardIcon />
+            <Icon name="icon-board" :size="20" />
             <p class="board-name" v-if="board && board.name">{{ board.name }}</p>
           </h3>
         </div>
 
-
-
         <div class="board-item create-board" @click="createBoard">
-          <IconBoardIcon />
+          <Icon name="icon-board" :size="20" />
           <h3 class="board-name">
-            <IconAddTaskMobileIcon width="20" height="20" />
+            <Icon name="icon-add-task-mobile" :size="10" />
             <p>Create New Board</p>
           </h3>
         </div>
@@ -76,12 +74,14 @@ const createBoard = () => {
     </div>
     <div class="controls">
       <div class="theme-controls">
-        <IconLightThemeIcon :style="{ color: !DarkModeEnabled ? 'var(--primary)' : 'var(--text)' }" />
+        <Icon name="icon-light-theme" :size="20"
+          :style="{ color: !DarkModeEnabled ? 'var(--primary)' : 'var(--text)' }" />
         <Switch v-model="DarkModeEnabled" />
-        <IconDarkThemeIcon :style="{ color: DarkModeEnabled ? 'var(--primary)' : 'var(--text)' }" />
+        <Icon name="icon-dark-theme" :size="20"
+          :style="{ color: DarkModeEnabled ? 'var(--primary)' : 'var(--text)' }" />
       </div>
       <button class="toggle-sidebar" @click="HideSidebar">
-        <IconHideSidebarIcon />
+        <Icon name="icon-hide-sidebar" :size="20" />
         <p>Hide Sidebar</p>
       </button>
     </div>
@@ -148,7 +148,6 @@ const createBoard = () => {
 
 .board-item svg {
   flex-shrink: 0;
-  margin-top: 10px;
 }
 
 .board-item:not(.active):hover {
@@ -198,7 +197,6 @@ html.dark .board-item:not(.active):hover {
 
 .theme-controls svg {
   flex-shrink: 0;
-  margin-top: 10px;
 }
 
 .toggle-sidebar {
@@ -224,7 +222,6 @@ html.dark .board-item:not(.active):hover {
 
 .toggle-sidebar svg {
   flex-shrink: 0;
-  margin-top: 15px;
 }
 
 @media (max-width: 1100px) {

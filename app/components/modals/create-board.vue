@@ -74,8 +74,8 @@ const createBoard = () => {
       <h1>Add New Board</h1>
 
       <!--
-        <button class="close-btn" @click="closeCreateBoardModal">
-          <IconCrossIcon />
+        <button type="button" class="close-btn" @click="closeModal">
+          <Icon name="icon-cross" :size="18" />
         </button>
         -->
     </div>
@@ -103,7 +103,7 @@ const createBoard = () => {
             <input type="text" v-model="col.name">
 
             <button class="remove-btn" @click="removeColumn(col.id)">
-              <IconCrossIcon />
+              <Icon name="icon-cross" :size="16" />
             </button>
 
           </div>
@@ -167,7 +167,10 @@ const createBoard = () => {
   cursor: pointer;
   width: 2rem;
   height: 2rem;
-  padding-top: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   color: var(--muted);
 }
 

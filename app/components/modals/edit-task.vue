@@ -123,7 +123,7 @@ const submitEdit = () => {
             <span v-if="isSubtaskInvalid(subtask)" class="error-message">Can’t be empty</span>
 
             <button type="button" class="remove-subtask-btn" @click="removeSubtask(index)">
-              <IconCrossIcon />
+              <Icon name="icon-cross" :size="16" />
             </button>
           </div>
         </div>

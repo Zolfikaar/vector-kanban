@@ -3,7 +3,11 @@ import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useBoardStore } from '~/stores/board'
 import { storeToRefs } from 'pinia'
 
-const emit = defineEmits(['update:openDeleteBoardModal', 'update:openEditBoardModal'])
+const emit = defineEmits([
+  'update:openDeleteBoardModal',
+  'update:openEditBoardModal',
+  'update:openMobileBoardsDropdown'
+])
 
 const boardStore = useBoardStore()
 const { selectedBoard } = storeToRefs(boardStore)
@@ -21,6 +25,10 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  openMobileBoardsDropdown: {
+    type: Boolean,
+    default: false
+  }
 })
 
 const showDetailsBox = ref(false)
@@ -34,13 +42,23 @@ function ToggleShowMoreBtn() {
   showDetailsBox.value = !showDetailsBox.value
 }
 
+function closeMobileBoards() {
+  showMobileBoardsMenu.value = false
+  emit('update:openMobileBoardsDropdown', false)
+}
+
 function handleDocumentClick(event) {
   if (dropdown.value && !dropdown.value.contains(event.target)) {
     showDetailsBox.value = false
   }
 
-  if (mobileBoardsDropdown.value && !mobileBoardsDropdown.value.contains(event.target)) {
-    showMobileBoardsMenu.value = false
+  if (
+    showMobileBoardsMenu.value &&
+    mobileBoardsDropdown.value &&
+    !mobileBoardsDropdown.value.contains(event.target) &&
+    !event.target.closest('.mobile-board-overlay')
+  ) {
+    closeMobileBoards()
   }
 }
 
@@ -61,16 +79,18 @@ function openCreateTaskModal() {
 const isBoardControlsDisabled = computed(() => !selectedBoard.value)
 
 function toggleMobileBoardsMenu() {
-  showMobileBoardsMenu.value = !showMobileBoardsMenu.value
+  const next = !props.openMobileBoardsDropdown
+  showMobileBoardsMenu.value = next
+  emit('update:openMobileBoardsDropdown', next)
 }
 
 function selectBoardFromMobileMenu(board) {
   boardStore.selectBoard(board)
-  showMobileBoardsMenu.value = false
+  closeMobileBoards()
 }
 
 function createBoardFromMobileMenu() {
-  showMobileBoardsMenu.value = false
+  closeMobileBoards()
   boardStore.isCreateBoardModalOpen = true
 }
 
@@ -91,75 +111,93 @@ watch(darkModeEnabled, (enabled) => {
   localStorage.setItem(THEME_STORAGE_KEY, enabled ? 'dark' : 'light')
 })
 
+watch(
+  () => props.openMobileBoardsDropdown,
+  (v) => {
+    showMobileBoardsMenu.value = v
+  },
+  { immediate: true }
+)
+
 </script>
 
 <template>
-  <div class="topbar">
+  <div class="topbar" :class="{ 'mobile-board-open': showMobileBoardsMenu }">
+    <div class="topbar-row">
+      <div class="logo" :class="hidden ? 'shrinked' : ''">
+        <Icon class="logo-mobile" name="logo-mobile" :size="30" />
+        <Icon class="logo-icon" name="logo-light" :size="160" v-if="darkModeEnabled" />
+        <Icon class="logo-icon" name="logo-dark" :size="160" v-else />
+      </div>
 
-    <div class="logo" :class="hidden ? 'shrinked' : ''">
-      <LogoMobileIcon class="logo-mobile" />
-      <LogoLightIcon class="logo-icon" />
-    </div>
+      <div class="main">
+        <div class="mobile-board-selector" ref="mobileBoardsDropdown">
+          <button type="button" class="board-name-button" @click.stop="toggleMobileBoardsMenu">
+            <h1 class="board-name">{{ selectedBoard?.name }}</h1>
+            <span class="board-name-chevron" aria-hidden="true">
+              <Icon name="icon-chevron-down" :size="20" v-if="!showMobileBoardsMenu" />
+              <Icon name="icon-chevron-up" :size="20" v-else />
+            </span>
+          </button>
+        </div>
 
-    <div class="main">
-      <div class="mobile-board-selector" ref="mobileBoardsDropdown">
-        <button class="board-name-button" @click.stop="toggleMobileBoardsMenu">
-          <h1 class="board-name">{{ selectedBoard?.name }}</h1>
-          <IconChevronDownIcon v-if="!showMobileBoardsMenu" />
-          <IconChevronUpIcon v-else />
-        </button>
+        <div class="action-btns" :class="{ inactive: isBoardControlsDisabled }">
 
-        <div v-if="showMobileBoardsMenu" class="mobile-boards-menu">
-          <h3 class="all-boards">ALL BOARDS ({{ boardStore.boards.length }})</h3>
-          <div class="mobile-boards-list">
-            <button
-              v-for="board in boardStore.boards"
-              :key="board.id"
-              class="mobile-board-item"
-              :class="{ active: boardStore.selectedBoard?.name === board.name }"
-              @click="selectBoardFromMobileMenu(board)"
-            >
-              <IconBoardIcon />
-              <span>{{ board.name }}</span>
+          <button type="button" class="btn-primary" :disabled="isBoardControlsDisabled" @click="openCreateTaskModal">
+            <Icon name="icon-add-task-mobile" :size="15" />
+            <span class="add-task-label">Add New Task</span>
+          </button>
+
+          <div class="dropdown" ref="dropdown">
+
+            <button type="button" class="show-more" :disabled="isBoardControlsDisabled" @click.stop="ToggleShowMoreBtn">
+              <Icon name="icon-vertical-ellipsis" :size="20" />
             </button>
-          </div>
 
-          <button class="mobile-board-item create-board" @click="createBoardFromMobileMenu">
-            <IconBoardIcon />
-            <span>+ Create New Board</span>
-          </button>
+            <div v-if="showDetailsBox" class="details-box">
+              <span class="edit" @click="editSelectedBoard">Edit Board</span>
+              <span class="delete" @click="deleteSelectedBoard">Delete Board</span>
+            </div>
 
-          <div class="theme-controls">
-            <IconLightThemeIcon />
-            <Switch v-model="darkModeEnabled" />
-            <IconDarkThemeIcon />
-          </div>
-        </div>
-      </div>
-
-      <div class="action-btns" :class="{ inactive: isBoardControlsDisabled }">
-
-        <button class="btn-primary" :disabled="isBoardControlsDisabled" @click="openCreateTaskModal">
-          <IconAddTaskMobileIcon width="20" height="20" />
-          <span class="add-task-label">Add New Task</span>
-        </button>
-
-        <div class="dropdown" ref="dropdown">
-
-          <button class="show-more" :disabled="isBoardControlsDisabled" @click.stop="ToggleShowMoreBtn">
-            <IconVerticalEllipsisIcon />
-          </button>
-
-          <div v-if="showDetailsBox" class="details-box">
-            <span class="edit" @click="editSelectedBoard">Edit Board</span>
-            <span class="delete" @click="deleteSelectedBoard">Delete Board</span>
           </div>
 
         </div>
-
       </div>
     </div>
 
+    <div
+      v-if="showMobileBoardsMenu"
+      class="mobile-board-overlay"
+      @click.self="closeMobileBoards"
+    >
+      <div class="mobile-boards-menu" @click.stop>
+        <h3 class="all-boards">ALL BOARDS ({{ boardStore.boards.length }})</h3>
+        <div class="mobile-boards-list">
+          <button
+            v-for="board in boardStore.boards"
+            :key="board.id"
+            type="button"
+            class="mobile-board-item"
+            :class="{ active: boardStore.selectedBoard?.name === board.name }"
+            @click="selectBoardFromMobileMenu(board)"
+          >
+            <Icon name="icon-board" :size="20" />
+            <span>{{ board.name }}</span>
+          </button>
+        </div>
+
+        <button type="button" class="mobile-board-item create-board" @click="createBoardFromMobileMenu">
+          <Icon name="icon-board" :size="20" />
+          <span>+ Create New Board</span>
+        </button>
+
+        <div class="theme-controls">
+          <Icon name="icon-light-theme" :size="15" />
+          <Switch v-model="darkModeEnabled" />
+          <Icon name="icon-dark-theme" :size="15" />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -167,10 +205,15 @@ watch(darkModeEnabled, (enabled) => {
 .topbar {
   background-color: var(--card-topbar-sidebar);
   width: 100%;
+  position: relative;
+}
+
+.topbar-row {
   height: 75px;
   display: flex;
   align-items: center;
-  position: relative;
+  width: 100%;
+  background-color: var(--card-topbar-sidebar);
 }
 
 .logo {
@@ -185,6 +228,28 @@ watch(darkModeEnabled, (enabled) => {
 
 .logo-mobile {
   display: none;
+}
+
+.logo-icon {
+  display: block;
+}
+
+@media (min-width: 769px) {
+  .logo:not(.shrinked) .logo-mobile {
+    display: none;
+  }
+
+  .logo:not(.shrinked) .logo-icon {
+    display: block;
+  }
+
+  .logo.shrinked .logo-mobile {
+    display: block;
+  }
+
+  .logo.shrinked .logo-icon {
+    display: none;
+  }
 }
 
 .logo.shrinked {
@@ -225,10 +290,13 @@ watch(darkModeEnabled, (enabled) => {
   cursor: pointer;
 }
 
-.board-name-button svg {
+.board-name-button .board-name-chevron {
   display: none;
-  color: var(--primary);
-  margin-top: 4px;
+}
+
+
+.mobile-board-overlay {
+  display: none;
 }
 
 .mobile-boards-menu {
@@ -245,13 +313,10 @@ watch(darkModeEnabled, (enabled) => {
   background-color: var(--card-topbar-sidebar);
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-
-  /* تم حذف display:none حتى يشتغل v-if */
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 10px;
-
   z-index: 10;
 }
 
@@ -344,7 +409,11 @@ watch(darkModeEnabled, (enabled) => {
 }
 
 @media (max-width: 768px) {
-  .topbar {
+  .topbar.mobile-board-open {
+    z-index: 110;
+  }
+
+  .topbar-row {
     height: 64px;
     padding: 0 12px;
     border-bottom: 1px solid var(--border);
@@ -359,11 +428,11 @@ watch(darkModeEnabled, (enabled) => {
     flex: 0 0 auto;
   }
 
-  .logo-mobile {
+  .logo .logo-mobile {
     display: block;
   }
 
-  .logo-icon {
+  .logo .logo-icon {
     display: none;
   }
 
@@ -381,22 +450,59 @@ watch(darkModeEnabled, (enabled) => {
     text-overflow: ellipsis;
   }
 
-  .board-name-button svg {
+  .board-name-button .board-name-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
+    margin: -10px -6px -10px 2px;
+  }
+
+  .board-name-button .board-name-chevron {
+    color: var(--primary);
+  }
+
+  .board-name-button .board-name-chevron :deep(svg) {
     display: block;
-    margin-top: 2px;
+  }
+
+  .mobile-board-overlay {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 24px 16px;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 109;
   }
 
   .mobile-boards-menu {
-    display: block;
-    position: absolute;
-    top: calc(100% + 12px);
-    left: -68px;
-    width: min(264px, calc(100vw - 24px));
+    display: flex;
+    flex-direction: column;
+    width: min(264px, calc(100vw - 32px));
+    max-height: min(520px, calc(100vh - 64px - 48px));
+    overflow-y: auto;
     background: var(--card-topbar-sidebar);
     border-radius: 8px;
-    padding: 16px 0 16px;
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
-    z-index: 50;
+    padding: 16px 0;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+    z-index: 1;
+  }
+
+  .mobile-board-item.active {
+    width: 240px;
+    max-width: calc(100% - 24px);
+  }
+
+  .all-boards {
+    margin-left: 24px;
+    padding-right: 24px;
   }
 
   .theme-controls {
@@ -408,10 +514,10 @@ watch(darkModeEnabled, (enabled) => {
     margin: 12px 16px 0;
     border-radius: 6px;
     background: var(--bg);
+    flex-shrink: 0;
   }
 
   .theme-controls svg {
-    margin-top: 8px;
     color: var(--muted);
   }
 
@@ -420,6 +526,7 @@ watch(darkModeEnabled, (enabled) => {
   }
 
   .action-btns .btn-primary {
+    height: 32px;
     width: 48px;
     min-width: 48px;
     border-radius: 24px;
