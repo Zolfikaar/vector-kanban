@@ -71,6 +71,19 @@ export const useBoardStore = defineStore('board', {
       localStorage.setItem('boards', JSON.stringify(this.boards))
     },
 
+    /** Keep each task's `status` aligned with the column it lives in (e.g. after drag-and-drop). */
+    syncTaskStatusesWithColumns() {
+      const board = this.selectedBoard
+      if (!board?.columns) return
+
+      for (const column of board.columns) {
+        if (!Array.isArray(column.tasks)) continue
+        for (const task of column.tasks) {
+          task.status = column.name
+        }
+      }
+    },
+
     selectBoard(board) {
       this.selectedBoard = board
     },
@@ -257,6 +270,7 @@ export const useBoardStore = defineStore('board', {
 
       return false
     },
+
 
   }
 })

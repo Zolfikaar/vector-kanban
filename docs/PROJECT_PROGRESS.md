@@ -23,4 +23,4 @@
 
 ## Bonus
 
-- [ ] Drag & Drop
+- [x] Drag & Drop

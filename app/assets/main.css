@@ -109,7 +109,7 @@ textarea {
 }
 
 .btn-primary svg {
-  /* margin-top: 10px; */
+  margin-right: 0.5em;
 }
 
 .btn-primary:hover {
@@ -260,7 +260,7 @@ textarea {
 }
 
 @media (max-width: 768px) {
-  
+
   .overlay.isactive {
     z-index: 95;
   }

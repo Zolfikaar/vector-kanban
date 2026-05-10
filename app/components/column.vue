@@ -1,17 +1,28 @@
 <script setup>
 import { useBoardStore } from '~/stores/board'
-// import { storeToRefs } from 'pinia'
+import draggable from 'vuedraggable'
+import { computed, watchEffect } from 'vue'
+
 const boardStore = useBoardStore()
-// const { selectedBoard } = storeToRefs(boardStore)
-import { computed } from 'vue'
 
 const props = defineProps({
   column: {
     type: Object,
     required: true
-  }, 
-
+  }
 })
+
+watchEffect(() => {
+  const col = props.column
+  if (col && !Array.isArray(col.tasks)) {
+    col.tasks = []
+  }
+})
+
+const onTaskDragEnd = () => {
+  boardStore.syncTaskStatusesWithColumns()
+  boardStore.saveBoards()
+}
 
 const colors = [
   { name: 'todo', color: '#49C4E5' },
@@ -95,15 +106,41 @@ const columnColor = computed(() => {
       </span>
     </p>
 
-    <div class="tasks" v-if="column?.tasks && column.tasks.length > 0">
-      <Task v-for="task in column.tasks" :task="task" @click="boardStore.openTaskModal(task, column)"/>
-    </div>
+    <div class="tasks">
+      <ClientOnly>
+        <draggable
+          v-model="column.tasks"
+          class="draggable-list"
+          ghost-class="ghost-card"
+          group="tasks"
+          item-key="title"
+          @end="onTaskDragEnd"
+        >
+          <template #item="{ element }">
+            <Task
+              :task="element"
+              @click="boardStore.openTaskModal(element, column)"
+            />
+          </template>
+        </draggable>
+        <template #fallback>
+          <div class="draggable-list">
+            <Task
+              v-for="task in column.tasks"
+              :key="task.title"
+              :task="task"
+              @click="boardStore.openTaskModal(task, column)"
+            />
+          </div>
+        </template>
+      </ClientOnly>
 
-    <div class="no-task" v-else>
-      <p>No tasks in this column. Add a new task to get started.</p>
-      <button class="btn-primary" @click="boardStore.openCreateTaskModal(column)">
-        + Add New Task
-      </button>
+      <div v-if="!column.tasks?.length" class="no-task">
+        <p>No tasks in this column. Add a new task to get started.</p>
+        <button type="button" class="btn-primary" @click="boardStore.openCreateTaskModal(column)">
+          + Add New Task
+        </button>
+      </div>
     </div>
 
   </div>
@@ -116,7 +153,6 @@ const columnColor = computed(() => {
 .column {
   background-color: var(--light);
   border-radius: 8px;
-
   width: 300px;
   /* Prevent flexbox from shrinking columns; otherwise horizontal overflow never occurs. */
   flex: 0 0 300px;
@@ -141,15 +177,42 @@ const columnColor = computed(() => {
   margin-right: 10px;
 }
 
+.tasks {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+}
+
+.draggable-list {
+  flex: 1;
+  min-height: 120px;
+}
+
+:deep(.ghost-card) {
+  opacity: 0.5;
+  border: 2px solid #42b883;
+  border-radius: 10px;
+}
+
 .no-task {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   min-height: 88px;
   background-color: var(--card-topbar-sidebar);
   border-radius: 10px;
   padding: 15px;
-  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+}
+
+.no-task .btn-primary {
+  pointer-events: auto;
+  margin-bottom: 20px;
 }
 
 @media (max-width: 1100px) {
