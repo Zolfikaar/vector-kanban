@@ -6,7 +6,7 @@ export default defineNuxtConfig({
       pathPrefix: false
     },
     {
-      path: '~/components/icons',
+      path: '~/icons',
       pathPrefix: false
     }
   ],
@@ -15,4 +15,14 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ['~/assets/main.css'],
   modules: ['@pinia/nuxt'],
+  typescript: {
+    shim: false
+  },
+  runtimeConfig: {
+    // أي شيء هنا يكون متاحاً فقط في السيرفر
+    databaseUrl: process.env.DATABASE_URL
+  },
+  nitro: {
+    preset: 'node-server'
+  }
 })

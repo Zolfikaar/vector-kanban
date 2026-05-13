@@ -1,12 +1,4 @@
 <script setup>
-// import { useBoardStore } from '~/stores/board'
-// import { storeToRefs } from 'pinia'
-
-// const boardStore = useBoardStore()
-// const { selectedBoard } = storeToRefs(boardStore)
-
-// const emit = defineEmits(['update:openViewTaskModal'])
-
 const props = defineProps({
   task: {
     type: Object,

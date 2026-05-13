@@ -133,7 +133,7 @@ watch(
       <div class="main">
         <div class="mobile-board-selector" ref="mobileBoardsDropdown">
           <button type="button" class="board-name-button" @click.stop="toggleMobileBoardsMenu">
-            <h1 class="board-name">{{ selectedBoard?.name }}</h1>
+            <h1 class="board-name">{{ selectedBoard?.title }}</h1>
             <span class="board-name-chevron" aria-hidden="true">
               <Icon name="icon-chevron-down" :size="20" v-if="!showMobileBoardsMenu" />
               <Icon name="icon-chevron-up" :size="20" v-else />
@@ -178,11 +178,11 @@ watch(
             :key="board.id"
             type="button"
             class="mobile-board-item"
-            :class="{ active: boardStore.selectedBoard?.name === board.name }"
+            :class="{ active: boardStore.selectedBoard?.title === board.name }"
             @click="selectBoardFromMobileMenu(board)"
           >
             <Icon name="icon-board" :size="20" />
-            <span>{{ board.name }}</span>
+            <span>{{ board.title }}</span>
           </button>
         </div>
 

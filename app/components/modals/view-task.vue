@@ -109,10 +109,10 @@ const { selectedTask: task, selectedColumn: column } = storeToRefs(boardStore)
 
     <div class="status">
       <h3>Status</h3>
-      <select v-model="task.status" @change="updateTaskStatus">
+      <select v-model="task.columnId" @change="updateTaskStatus">
 
-        <option v-for="col in boardStore.selectedBoard.columns" :key="col.id" :value="col.name">
-          {{ col.name }}
+        <option v-for="col in boardStore.selectedBoard.columns" :key="col.id" :value="col.id">
+          {{ col.title }}
         </option>
 
 

@@ -19,9 +19,8 @@ watchEffect(() => {
   }
 })
 
-const onTaskDragEnd = () => {
-  boardStore.syncTaskStatusesWithColumns()
-  boardStore.saveBoards()
+const onTaskDragEnd = async () => {
+  await boardStore.syncTaskStatusesWithColumns()
 }
 
 const colors = [
@@ -99,10 +98,10 @@ const columnColor = computed(() => {
 
 
   <div class="column">
-    <p class="column-title bold" v-if="column && column.name">
+    <p class="column-title bold" v-if="column && column.title">
       <span class="column-color" :style="{ backgroundColor: columnColor }"></span>
       <span>
-        {{ column.name }} ({{ column.tasks?.length || 0 }})
+        {{ column.title }} ({{ column.tasks?.length || 0 }})
       </span>
     </p>
 

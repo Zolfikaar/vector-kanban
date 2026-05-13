@@ -8,9 +8,11 @@ const hasTriedSubmit = ref(false)
 const isTitleInvalid = ref(false)
 
 const taskDraft = ref({
+  id:null,
   title: '',
   description: '',
-  status: null,
+  order: null,
+  columnId: null,
   subtasks: ['']
 })
 
@@ -30,7 +32,8 @@ watchEffect(() => {
   taskDraft.value = {
     title: selectedTask.title ?? '',
     description: selectedTask.description ?? '',
-    status: selectedTask.status ?? selectedColumnName ?? boardStore.selectedBoard?.columns?.[0]?.name ?? null,
+    order: selectedTask.order ?? null,
+    columnId: selectedTask.columnId ?? null,
     subtasks: selectedTask.subtasks?.length
       ? selectedTask.subtasks.map((subtask) => subtask.title ?? '')
       : ['']
@@ -64,7 +67,8 @@ const submitEdit = () => {
     ...boardStore.selectedTask,
     title: taskDraft.value.title.trim(),
     description: taskDraft.value.description.trim(),
-    status: taskDraft.value.status,
+    order: taskDraft.value.order,
+    columnId: taskDraft.value.columnId,
     subtasks: taskDraft.value.subtasks
       .map((subtaskTitle, index) => {
         const previousSubtask = boardStore.selectedTask.subtasks?.[index]
@@ -135,9 +139,9 @@ const submitEdit = () => {
 
       <div class="status">
         <label>Status</label>
-        <select v-model="taskDraft.status">
-          <option v-for="col in boardStore.selectedBoard.columns" :key="col.id" :value="col.name">
-            {{ col.name }}
+        <select v-model="taskDraft.columnId">
+          <option v-for="col in boardStore.selectedBoard.columns" :key="col.id" :value="col.id">
+            {{ col.title }}
           </option>
         </select>
       </div>
