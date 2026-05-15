@@ -8,6 +8,7 @@ export default defineEventHandler(async (event) => {
         columns: {
           with: {
             tasks: {
+              orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],
               with: {
                 subtasks: true,
               }

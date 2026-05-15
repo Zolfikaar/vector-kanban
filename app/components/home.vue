@@ -41,7 +41,7 @@ const isLoading = computed(() => boardStore.isLoading)
     </div>
 
     <div class="loading" v-if="isLoading">
-      <div class="spinner" />
+      <AppSpinner :size="40" />
     </div>
 
   </div>
@@ -57,21 +57,6 @@ const isLoading = computed(() => boardStore.isLoading)
   justify-content: center;
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   z-index: 30;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid color-mix(in srgb, var(--muted) 35%, transparent);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .home {

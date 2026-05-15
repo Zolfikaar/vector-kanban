@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia'
+import { toast } from 'vue-sonner'
 
 export const useBoardStore = defineStore('board', {
   state: () => ({
     boards: [],
     
     isLoading: false,
+    isSubmitting: false,
     selectedBoard: null,
     selectedTask: null,
     selectedColumn: null,
@@ -205,10 +207,12 @@ export const useBoardStore = defineStore('board', {
       const draft = this.createTaskDraft
       if (!draft.title?.trim() || draft.columnId == null) return
 
+      const targetColumn = this.selectedBoard.columns.find(
+        (c) => Number(c.id) === Number(draft.columnId)
+      )
+
+      this.isSubmitting = true
       try {
-        const targetColumn = this.selectedBoard.columns.find(
-          (c) => Number(c.id) === Number(draft.columnId)
-        )
         const newTask = await $fetch('/api/tasks', {
           method: 'POST',
           body: {
@@ -220,14 +224,24 @@ export const useBoardStore = defineStore('board', {
           }
         })
 
-        if (targetColumn) {
+        if (targetColumn && newTask) {
           if (!Array.isArray(targetColumn.tasks)) targetColumn.tasks = []
-          targetColumn.tasks.push(newTask)
+          // Newest-first to match server ordering after reload
+          targetColumn.tasks.unshift(newTask)
         }
 
+        toast.success('Task created successfully')
         this.closeAllModals()
       } catch (error) {
         console.error('Error saving task:', error)
+        const message =
+          error?.data?.statusMessage ||
+          error?.data?.message ||
+          error?.message ||
+          'Could not create task. Please try again.'
+        toast.error(message)
+      } finally {
+        this.isSubmitting = false
       }
     },
 
@@ -293,11 +307,17 @@ export const useBoardStore = defineStore('board', {
           this.selectedTask = { ...this.selectedTask, ...updatedTask }
           
           this.closeAllModals()
+          toast.success('Task updated successfully')
           return true
         }
       } catch (error) {
-        console.error("فشل تعديل المهمة في قاعدة البيانات:", error)
-        // هنا يمكنك إضافة رسالة خطأ للمستخدم (تنبيه)
+        console.error('Failed to edit task:', error)
+        const message =
+          error?.data?.statusMessage ||
+          error?.data?.message ||
+          error?.message ||
+          'Could not update task. Please try again.'
+        toast.error(message)
         return false
       }
       return false
@@ -317,8 +337,15 @@ export const useBoardStore = defineStore('board', {
         }
         
         this.closeAllModals();
+        toast.success('Task deleted successfully')
       } catch (error) {
-        console.error("Failed to delete task:", error);
+        console.error('Failed to delete task:', error)
+        const message =
+          error?.data?.statusMessage ||
+          error?.data?.message ||
+          error?.message ||
+          'Could not delete task. Please try again.'
+        toast.error(message)
       }
     },
   }

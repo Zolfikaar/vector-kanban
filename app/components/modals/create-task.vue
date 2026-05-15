@@ -1,8 +1,10 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useBoardStore } from '~/stores/board'
 
 const boardStore = useBoardStore()
+const { isSubmitting } = storeToRefs(boardStore)
 
 const isTitleInvalid = ref(false)
 const hasTriedSubmit = ref(false)
@@ -27,6 +29,8 @@ const isSubtaskInvalid = (subtask) =>
   hasTriedSubmit.value && hasAnyNonEmptySubtask.value && !subtask.trim()
 
 const submitTask = () => {
+  if (isSubmitting.value) return
+
   hasTriedSubmit.value = true
   isTitleInvalid.value = !boardStore.createTaskDraft.title.trim()
 
@@ -110,7 +114,14 @@ const submitTask = () => {
         </select>
       </div>
 
-      <button type="submit" class="createTaskBtn btn-primary">Create Task</button>
+      <button
+        type="submit"
+        class="createTaskBtn btn-primary"
+        :disabled="isSubmitting"
+      >
+        <AppSpinner v-if="isSubmitting" :size="18" label="Creating task" class="create-task__spinner" />
+        <span>{{ isSubmitting ? 'Creating…' : 'Create Task' }}</span>
+      </button>
 
     </form>
 
@@ -240,10 +251,21 @@ const submitTask = () => {
 
 .createTaskBtn {
   margin-top: 8px;
-  display: block;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  gap: 10px;
   width: 100%;
   height: 44px;
+}
+
+.createTaskBtn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.create-task__spinner {
+  position: relative;
 }
 
 .add-subtask-btn {

@@ -1,4 +1,6 @@
 <script setup>
+import 'vue-sonner/style.css'
+import { Toaster } from 'vue-sonner'
 import { useBoardStore } from './stores/board'
 
 const boardStore = useBoardStore()
@@ -67,6 +69,8 @@ onMounted(async () => {
   <DeleteTask v-if="boardStore.isDeleteTaskModalOpen" />
 
   <CreateTask v-if="boardStore.isCreateTaskModalOpen" />
+
+  <Toaster theme="dark" rich-colors :close-button="false" />
 
 </template>
 
