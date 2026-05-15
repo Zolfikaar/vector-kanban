@@ -235,8 +235,17 @@ textarea {
 }
 
 .delete-modal .btns .delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   background-color: var(--danger);
   color: white;
+}
+
+.delete-modal .btns .delete-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
 }
 
 .delete-modal .btns .delete-btn:hover {

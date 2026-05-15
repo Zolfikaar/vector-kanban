@@ -1,142 +1,154 @@
 <script setup>
 import { ref, computed, watchEffect } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useBoardStore } from '~/stores/board'
 
 const boardStore = useBoardStore()
+const { isSubmitting } = storeToRefs(boardStore)
 
 const hasTriedSubmit = ref(false)
-const isEmptyName = ref(false)
 
 const currentBoard = ref({
   id: null,
-  name: '',
-  columns: [],
-  created_at: null,
-  created_by: null,
-  is_private: false
+  title: '',
+  columns: []
 })
 
 const selectedBoard = computed(() => boardStore.selectedBoard)
 
 watchEffect(() => {
-
   if (!selectedBoard.value) return
 
   currentBoard.value = {
     id: selectedBoard.value.id,
-    name: selectedBoard.value.name,
-    columns: JSON.parse(JSON.stringify(selectedBoard.value.columns || [])),
-    created_at: selectedBoard.value.created_at,
-    created_by: selectedBoard.value.created_by,
-    is_private: selectedBoard.value.is_private
+    title: selectedBoard.value.title ?? '',
+    columns: JSON.parse(JSON.stringify(selectedBoard.value.columns || []))
   }
 
+  hasTriedSubmit.value = false
 })
 
-const AddNewColumn = () => {
-  hasTriedSubmit.value = false
-  isEmptyName.value = false
-  currentBoard.value.columns.push({
-    id: Date.now(),
-    name: ''
-  })
-
+const trimBoardTitle = () => {
+  currentBoard.value.title = currentBoard.value.title.trim()
 }
 
-const RemoveColumn = (index) => {
+const trimColumnTitle = (col) => {
+  col.title = col.title.trim()
+}
+
+const addNewColumn = () => {
+  hasTriedSubmit.value = false
+  currentBoard.value.columns.push({
+    id: null,
+    title: ''
+  })
+}
+
+const removeColumn = (index) => {
+  if (currentBoard.value.columns.length === 1) return
   currentBoard.value.columns.splice(index, 1)
 }
 
-const isBoardNameEmpty = computed(() => !currentBoard.value.name.trim())
+const isBoardTitleEmpty = computed(() => !currentBoard.value.title.trim())
 const isAnyColumnEmpty = computed(() =>
-  currentBoard.value.columns.some((col) => !col.name?.trim())
+  currentBoard.value.columns.some((col) => !col.title?.trim())
 )
-const isBoardNameInvalid = computed(() => hasTriedSubmit.value && isBoardNameEmpty.value)
-const isColumnInvalid = (col) => hasTriedSubmit.value && !col.name?.trim()
+const isBoardTitleInvalid = computed(
+  () => hasTriedSubmit.value && isBoardTitleEmpty.value
+)
+const isColumnInvalid = (col) => hasTriedSubmit.value && !col.title?.trim()
 
-const UpdateBoard = () => {
+const columnKey = (col, index) => col.id ?? `new-${index}`
+
+const submitUpdateBoard = async () => {
+  if (isSubmitting.value) return
+
   hasTriedSubmit.value = true
+  trimBoardTitle()
+  currentBoard.value.columns.forEach(trimColumnTitle)
 
-  if (isBoardNameEmpty.value || isAnyColumnEmpty.value) {
-    isEmptyName.value = true
-    return
-  }
+  if (isBoardTitleEmpty.value || isAnyColumnEmpty.value) return
 
-  boardStore.editBoard(currentBoard.value)
-  boardStore.selectedBoard = currentBoard.value
-  // closeEditBoardModal()
+  await boardStore.editBoard({
+    title: currentBoard.value.title,
+    columns: currentBoard.value.columns
+  })
 }
-
 </script>
 
 <template>
-
   <div class="modal-global">
-
     <div class="header">
       <h1>Edit Board</h1>
 
-      <button class="close-btn" @click="boardStore.closeAllModals()">
+      <button type="button" class="close-btn" @click="boardStore.closeAllModals()">
         <Icon name="icon-cross" :size="18" />
       </button>
     </div>
 
     <div class="fields">
-
       <div class="board-name">
-
-        <label class="medium">Name</label>
-
-        <span class="err-msg" v-if="isEmptyName">
-          Can't be empty
-        </span>
-
-        <input type="text" v-model="currentBoard.name" :class="{ error: isBoardNameInvalid }">
-
+        <div class="field-label-row">
+          <label class="medium">Name</label>
+          <span v-if="isBoardTitleInvalid" class="field-error">Can't be empty</span>
+        </div>
+        <input
+          v-model="currentBoard.title"
+          type="text"
+          :class="{ error: isBoardTitleInvalid }"
+          @blur="trimBoardTitle"
+        >
       </div>
-
 
       <div class="columns">
-
         <div class="col-row">
-
           <label class="medium">Columns</label>
 
-          <div class="col-input" v-for="(col, index) in currentBoard.columns" :key="col.id">
-
-            <input type="text" v-model="col.name" :class="{ error: isColumnInvalid(col) }">
-
-            <button type="button" @click="RemoveColumn(index)">
-              <Icon name="icon-cross" :size="16" />
-            </button>
-
+          <div
+            v-for="(col, index) in currentBoard.columns"
+            :key="columnKey(col, index)"
+            class="col-input"
+          >
+            <span v-if="isColumnInvalid(col)" class="field-error">Can't be empty</span>
+            <div class="col-input-row">
+              <input
+                v-model="col.title"
+                type="text"
+                :class="{ error: isColumnInvalid(col) }"
+                @blur="trimColumnTitle(col)"
+              >
+              <button
+                type="button"
+                :disabled="currentBoard.columns.length === 1"
+                @click="removeColumn(index)"
+              >
+                <Icon name="icon-cross" :size="16" />
+              </button>
+            </div>
           </div>
-
         </div>
-
       </div>
-
     </div>
 
-
     <div class="btns">
-
-      <button class="add-column-btn" @click="AddNewColumn">
+      <button type="button" class="add-column-btn" @click="addNewColumn">
         + Add New Column
       </button>
 
-      <button class="btn-primary update-btn" @click="UpdateBoard">
-        Update Board
+      <button
+        type="button"
+        class="btn-primary update-btn"
+        :disabled="isSubmitting"
+        @click="submitUpdateBoard"
+      >
+        <AppSpinner v-if="isSubmitting" :size="18" label="Updating board" />
+        <span>{{ isSubmitting ? 'Saving…' : 'Update Board' }}</span>
       </button>
-
     </div>
-
   </div>
-
 </template>
 
 <style scoped>
-
 .header {
   display: flex;
   align-items: center;
@@ -160,6 +172,7 @@ const UpdateBoard = () => {
 
 .fields .board-name {
   margin-bottom: 20px;
+  position: relative;
 }
 
 .fields .board-name label,
@@ -176,25 +189,47 @@ const UpdateBoard = () => {
   border: 1px solid var(--input-border);
   border-radius: 5px;
   padding-left: 10px;
+  background: var(--card-topbar-sidebar);
+  color: var(--text);
 }
 
 .fields .board-name input:focus {
   outline-color: unset;
 }
 
-.err-msg {
-  color: red;
-  float: right;
+.field-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
 }
 
-.fields .columns .col-row .col-input input {
-  width: calc(100% - 40px);
+.field-error {
+  color: var(--danger);
+  font-weight: 700;
+  font-size: 12px;
 }
 
-.fields .columns .col-row .col-input {
+.col-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.col-input .field-error {
+  text-align: right;
+}
+
+.col-input-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.col-input-row input {
+  flex: 1;
+  min-width: 0;
 }
 
 .fields .columns .col-row .col-input button {
@@ -210,7 +245,12 @@ const UpdateBoard = () => {
   min-height: 2rem;
 }
 
-.fields .columns .col-row .col-input button:hover {
+.fields .columns .col-row .col-input button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.fields .columns .col-row .col-input button:hover:not(:disabled) {
   color: var(--danger);
 }
 
@@ -232,20 +272,23 @@ const UpdateBoard = () => {
 
 .btns .update-btn {
   margin-top: 20px;
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btns .update-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
 }
 
 .btns .add-column-btn {
   color: var(--primary);
-  background-color: #9797971a;
+  background-color: var(--secondary-btn);
 }
 
-html.dark .btns .add-column-btn {
-  background-color: white;
-}
-
-.btns .add-column-btn:hover,
-html.dark .btns .add-column-btn:hover {
+.btns .add-column-btn:hover {
   background-color: var(--primary-hover);
   color: white;
 }

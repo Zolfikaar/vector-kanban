@@ -1,129 +1,157 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useBoardStore } from '~/stores/board'
 
 const boardStore = useBoardStore()
+const { isSubmitting } = storeToRefs(boardStore)
 
-const emit = defineEmits(['update:openCreateBoardModal'])
-
-const newBoard = ref({ name: '' })
+const newBoard = ref({ title: '' })
 const hasTriedSubmit = ref(false)
 
 const columns = ref([
-  { id: crypto.randomUUID(), name: '', tasks: [] }
+  { id: crypto.randomUUID(), title: '', tasks: [] }
 ])
 
-const closeModal = () => {
-  emit('update:openCreateBoardModal', false)
-  resetModal()
+const resetModal = () => {
+  newBoard.value.title = ''
+  columns.value = [{ id: crypto.randomUUID(), title: '', tasks: [] }]
+  hasTriedSubmit.value = false
 }
 
-const resetModal = () => {
-  newBoard.value.name = ''
-  columns.value = [{ id: crypto.randomUUID(), name: '', tasks: [] }]
-  hasTriedSubmit.value = false
+const trimBoardTitle = () => {
+  newBoard.value.title = newBoard.value.title.trim()
+}
+
+const trimColumnTitle = (col) => {
+  col.title = col.title.trim()
 }
 
 const addColumn = () => {
   hasTriedSubmit.value = false
   columns.value.push({
     id: crypto.randomUUID(),
-    name: '',
+    title: '',
     tasks: []
   })
 }
 
 const removeColumn = (id) => {
   if (columns.value.length === 1) return
-  columns.value = columns.value.filter(c => c.id !== id)
+  columns.value = columns.value.filter((c) => c.id !== id)
 }
 
-const isBoardNameEmpty = computed(() => !newBoard.value.name.trim())
-const isBoardNameInvalid = computed(() => hasTriedSubmit.value && isBoardNameEmpty.value)
-const isEmptyName = computed(() => hasTriedSubmit.value && isBoardNameEmpty.value)
+const isBoardTitleEmpty = computed(() => !newBoard.value.title.trim())
+const isAnyColumnEmpty = computed(() =>
+  columns.value.some((col) => !col.title.trim())
+)
+const isBoardTitleInvalid = computed(
+  () => hasTriedSubmit.value && isBoardTitleEmpty.value
+)
+const isColumnInvalid = (col) => hasTriedSubmit.value && !col.title.trim()
 
-const createBoard = () => {
+const submitCreateBoard = async () => {
+  if (isSubmitting.value) return
+
   hasTriedSubmit.value = true
-  if (isBoardNameEmpty.value) return
+  trimBoardTitle()
+  columns.value.forEach(trimColumnTitle)
 
-  const sanitizedColumns = columns.value
-    .map((column) => ({
-      ...column,
-      name: column.name.trim()
-    }))
-    .filter((column) => column.name)
+  if (isBoardTitleEmpty.value || isAnyColumnEmpty.value) return
 
-  boardStore.createNewBoard({
-    id: crypto.randomUUID(),
-    name: newBoard.value.name.trim(),
-    columns: sanitizedColumns,
-    created_at: new Date(),
-    created_by: 'John Doe',
-    is_private: false
+  const success = await boardStore.createBoard({
+    title: newBoard.value.title,
+    columns: columns.value
   })
 
-  boardStore.selectBoard(boardStore.boards.at(-1))
-  closeModal()
+  if (success) {
+    resetModal()
+  }
 }
 </script>
 
 <template>
-  <div class="modal-global">
-
-    <div class="header">
+  <div
+    class="modal-global"
+    
+    
+    
+  >
+    <div
+      class="header"
+      
+      
+      
+    >
       <h1>Add New Board</h1>
-
-      <!--
-        <button type="button" class="close-btn" @click="closeModal">
-          <Icon name="icon-cross" :size="18" />
-        </button>
-        -->
     </div>
 
-    <div class="fields">
-
+    <div
+      class="fields"
+      
+      
+      
+    >
       <div class="board-name">
-        <label class="medium">Name</label>
-
-        <span class="err-msg" v-if="isEmptyName">
-          Can't be empty
-        </span>
-
-        <input type="text" v-model="newBoard.name" :class="{ error: isBoardNameInvalid }">
+        <div class="field-label-row">
+          <label class="medium">Name</label>
+          <span v-if="isBoardTitleInvalid" class="field-error">Can't be empty</span>
+        </div>
+        <input
+          v-model="newBoard.title"
+          type="text"
+          :class="{ error: isBoardTitleInvalid }"
+          @blur="trimBoardTitle"
+        >
       </div>
 
       <div class="columns">
-
         <div class="col-row">
-
           <label class="medium">Columns</label>
 
-          <div class="col-input" v-for="col in columns" :key="col.id">
-
-            <input type="text" v-model="col.name">
-
-            <button class="remove-btn" @click="removeColumn(col.id)">
-              <Icon name="icon-cross" :size="16" />
-            </button>
-
+          <div
+            v-for="col in columns"
+            :key="col.id"
+            class="col-input"
+           
+          >
+            <span v-if="isColumnInvalid(col)" class="field-error">Can't be empty</span>
+            <div class="col-input-row">
+              <input
+                v-model="col.title"
+                type="text"
+                :class="{ error: isColumnInvalid(col) }"
+                @blur="trimColumnTitle(col)"
+              >
+              <button type="button" class="remove-btn" @click="removeColumn(col.id)">
+                <Icon name="icon-cross" :size="16" />
+              </button>
+            </div>
           </div>
-
         </div>
-
       </div>
-
     </div>
 
-    <div class="btns">
-      <button class="add-column-btn" @click="addColumn">
+    <div
+      class="btns"
+      
+      
+      
+    >
+      <button type="button" class="add-column-btn" @click="addColumn">
         + Add New Column
       </button>
 
-      <button class="btn-primary create-btn" @click="createBoard">
-        Create New Board
+      <button
+        type="button"
+        class="btn-primary create-btn"
+        :disabled="isSubmitting"
+        @click="submitCreateBoard"
+      >
+        <AppSpinner v-if="isSubmitting" :size="18" label="Creating board" />
+        <span>{{ isSubmitting ? 'Creating…' : 'Create New Board' }}</span>
       </button>
     </div>
-
   </div>
 </template>
 
@@ -136,6 +164,7 @@ const createBoard = () => {
 
 .board-name {
   margin-bottom: 20px;
+  position: relative;
 }
 
 .board-name label,
@@ -152,16 +181,15 @@ const createBoard = () => {
   border: 1px solid var(--input-border);
   border-radius: 5px;
   padding-left: 10px;
+  background: var(--card-topbar-sidebar);
+  color: var(--text);
 }
 
 .col-input {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   margin-bottom: 10px;
 }
 
-.col-input .remove-btn{
+.col-input .remove-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -183,9 +211,43 @@ const createBoard = () => {
   height: 40px;
 }
 
-.err-msg {
-  color: red;
-  float: right;
+.board-name input.error,
+.col-input input.error {
+  border-color: var(--danger);
+}
+
+.field-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.field-error {
+  color: var(--danger);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.col-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.col-input .field-error {
+  text-align: right;
+}
+
+.col-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.col-input-row input {
+  flex: 1;
+  min-width: 0;
 }
 
 .btns button {
@@ -198,20 +260,23 @@ const createBoard = () => {
 
 .create-btn {
   margin-top: 20px;
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.create-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
 }
 
 .add-column-btn {
   color: var(--primary);
-  background: #9797971a;
+  background: var(--secondary-btn);
 }
 
-html.dark .add-column-btn {
-  background: white;
-}
-
-.add-column-btn:hover,
-html.dark .add-column-btn:hover {
+.add-column-btn:hover {
   background: var(--primary-hover);
   color: white;
 }

@@ -49,7 +49,6 @@ export const useBoardStore = defineStore('board', {
       try {
         
         const data = await $fetch('/api/boards')
-        console.log(data[0]);
 
         this.boards = data || []
         
@@ -107,50 +106,152 @@ export const useBoardStore = defineStore('board', {
       this.selectedBoard = board
     },
 
-    createNewBoard(newBoard) {
-
-      this.boards.push(newBoard)
-
-      // this.saveBoards()
-
+    getErrorMessage(error, fallback) {
+      return (
+        error?.data?.statusMessage ||
+        error?.data?.message ||
+        error?.message ||
+        fallback
+      )
     },
 
-    deleteBoard(board) {
+    async createBoard({ title, columns }) {
+      this.isSubmitting = true
 
-      const index = this.boards.indexOf(board)
+      try {
+        const newBoard = await $fetch('/api/boards', {
+          method: 'POST',
+          body: {
+            title: title.trim(),
+            columns: columns.map((column) => ({
+              title: column.title.trim()
+            }))
+          }
+        })
 
-      if (index !== -1) {
-        this.boards.splice(index, 1)
+        this.closeAllModals()
+        this.boards.push(newBoard)
+        this.selectBoard(newBoard)
+        toast.success('Board created successfully')
+        return true
+      } catch (error) {
+        console.error('Error creating board:', error)
+        this.closeAllModals()
+        toast.error(
+          this.getErrorMessage(error, 'Could not create board. Please try again.')
+        )
+        return false
+      } finally {
+        this.isSubmitting = false
       }
-
-      // this.saveBoards()
-
-      this.selectedBoard = null
-
     },
 
-    editBoard(updatedBoard) {
+    async deleteBoard(board) {
+      if (!board?.id) return false
 
-      const index = this.boards.indexOf(this.selectedBoard)
+      this.isSubmitting = true
 
-      if (index !== -1) {
-        this.boards[index] = updatedBoard
+      try {
+        await $fetch(`/api/boards/${board.id}`, {
+          method: 'DELETE'
+        })
+
+        const index = this.boards.findIndex((b) => b.id === board.id)
+        if (index !== -1) {
+          this.boards.splice(index, 1)
+        }
+
+        const wasSelected = this.selectedBoard?.id === board.id
+        if (wasSelected) {
+          this.selectedBoard = this.boards[0] ?? null
+        }
+
+        this.closeAllModals()
+        toast.success('Board deleted successfully')
+        return true
+      } catch (error) {
+        console.error('Error deleting board:', error)
+        this.closeAllModals()
+        toast.error(
+          this.getErrorMessage(error, 'Could not delete board. Please try again.')
+        )
+        return false
+      } finally {
+        this.isSubmitting = false
       }
-
-      // this.saveBoards()
-
     },
 
-    addColumnToBoard(columns) {
+    async editBoard(
+      { title, columns },
+      { successMessage = 'Board updated successfully' } = {}
+    ) {
+      if (!this.selectedBoard?.id) return false
 
-      const index = this.boards.indexOf(this.selectedBoard)
+      this.isSubmitting = true
 
-      if (index !== -1) {
-        this.boards[index].columns.push(...columns)
+      try {
+        const updatedBoard = await $fetch(
+          `/api/boards/${this.selectedBoard.id}`,
+          {
+            method: 'PATCH',
+            body: {
+              title: title.trim(),
+              columns: columns.map((column) => ({
+                id: column.id ?? undefined,
+                title: column.title.trim()
+              }))
+            }
+          }
+        )
+
+        const index = this.boards.findIndex(
+          (b) => b.id === this.selectedBoard.id
+        )
+        if (index !== -1) {
+          this.boards[index] = updatedBoard
+        }
+
+        this.selectedBoard = updatedBoard
+        this.closeAllModals()
+        toast.success(successMessage)
+        return true
+      } catch (error) {
+        console.error('Error updating board:', error)
+        this.closeAllModals()
+        toast.error(
+          this.getErrorMessage(error, 'Could not update board. Please try again.')
+        )
+        return false
+      } finally {
+        this.isSubmitting = false
       }
+    },
 
-      // this.saveBoards()
+    async addColumnToBoard(newColumns) {
+      if (!this.selectedBoard) return false
 
+      const sanitized = newColumns
+        .map((column) => ({
+          title: (column.title ?? column.name ?? '').trim()
+        }))
+        .filter((column) => column.title)
+
+      if (!sanitized.length) return false
+
+      const existingColumns = (this.selectedBoard.columns || []).map(
+        (column) => ({
+          id: column.id,
+          title: column.title
+        })
+      )
+
+      return this.editBoard(
+        {
+          title: this.selectedBoard.title,
+          columns: [...existingColumns, ...sanitized]
+        },
+        { successMessage: 'Column(s) added successfully' }
+      )
     },
 
     openCreateColumnModal() {
@@ -205,7 +306,13 @@ export const useBoardStore = defineStore('board', {
     
     async createTask() {
       const draft = this.createTaskDraft
-      if (!draft.title?.trim() || draft.columnId == null) return
+      if (
+        !draft.title?.trim() ||
+        draft.columnId == null ||
+        draft.subtasks.some((subtask) => !subtask.trim())
+      ) {
+        return false
+      }
 
       const targetColumn = this.selectedBoard.columns.find(
         (c) => Number(c.id) === Number(draft.columnId)
@@ -220,18 +327,18 @@ export const useBoardStore = defineStore('board', {
             description: draft.description?.trim() ?? '',
             columnId: Number(draft.columnId),
             order: targetColumn?.tasks?.length ?? 0,
-            subtasks: draft.subtasks.filter((s) => s.trim())
+            subtasks: draft.subtasks.map((s) => s.trim())
           }
         })
 
         if (targetColumn && newTask) {
           if (!Array.isArray(targetColumn.tasks)) targetColumn.tasks = []
-          // Newest-first to match server ordering after reload
           targetColumn.tasks.unshift(newTask)
         }
 
-        toast.success('Task created successfully')
         this.closeAllModals()
+        toast.success('Task created successfully')
+        return true
       } catch (error) {
         console.error('Error saving task:', error)
         const message =
@@ -240,6 +347,7 @@ export const useBoardStore = defineStore('board', {
           error?.message ||
           'Could not create task. Please try again.'
         toast.error(message)
+        return false
       } finally {
         this.isSubmitting = false
       }
@@ -260,56 +368,57 @@ export const useBoardStore = defineStore('board', {
     },
 
     async editTask(updatedTask) {
-      // 1. التحقق من وجود البيانات اللازمة
-      if (!this.selectedBoard || !this.selectedColumn || !this.selectedTask) return false
+      if (!this.selectedBoard || !this.selectedColumn || !this.selectedTask) {
+        return false
+      }
+
+      if (
+        !updatedTask.title?.trim() ||
+        updatedTask.subtasks?.some((subtask) => !subtask.title?.trim())
+      ) {
+        return false
+      }
+
+      this.isSubmitting = true
 
       try {
         const sourceColumn = this.selectedColumn
         const taskIndex = sourceColumn.tasks.indexOf(this.selectedTask)
-        
+
         const targetColumnId = Number(updatedTask.columnId)
         const targetColumn =
           this.selectedBoard.columns.find(
             (column) => Number(column.id) === targetColumnId
           ) || sourceColumn
 
-        // 2. إرسال التحديث للسيرفر (PATCH)
         await $fetch(`/api/tasks/${this.selectedTask.id}`, {
           method: 'PATCH',
           body: {
             title: updatedTask.title,
             description: updatedTask.description,
-            columnId: targetColumn.id, // نرسل الـ ID الحقيقي للعمود
-            // يمكنك إضافة order هنا إذا كنت تدعم تغيير الترتيب أثناء التعديل
+            columnId: targetColumn.id
           }
         })
 
-        // 3. التحديث المحلي للواجهة (بعد نجاح طلب السيرفر)
-        if (taskIndex !== -1) {
-          // التأكد من أن مصفوفة المهام في العمود الهدف موجودة
-          if (!Array.isArray(targetColumn.tasks)) {
-            targetColumn.tasks = []
-          }
+        if (taskIndex === -1) return false
 
-          if (Number(targetColumn.id) === Number(sourceColumn.id)) {
-            // إذا كان التعديل في نفس العمود، نحدث البيانات فقط
-            sourceColumn.tasks[taskIndex] = { ...this.selectedTask, ...updatedTask }
-          } else {
-            // إذا تغير العمود، نحذفها من القديم ونضيفها للجديد
-            sourceColumn.tasks.splice(taskIndex, 1)
-            targetColumn.tasks.push({ ...this.selectedTask, ...updatedTask })
-            
-            // تحديث العمود المختار ليكون العمود الجديد
-            this.selectedColumn = targetColumn
-          }
-
-          // تحديث المهمة المختارة بالبيانات الجديدة
-          this.selectedTask = { ...this.selectedTask, ...updatedTask }
-          
-          this.closeAllModals()
-          toast.success('Task updated successfully')
-          return true
+        if (!Array.isArray(targetColumn.tasks)) {
+          targetColumn.tasks = []
         }
+
+        if (Number(targetColumn.id) === Number(sourceColumn.id)) {
+          sourceColumn.tasks[taskIndex] = { ...this.selectedTask, ...updatedTask }
+        } else {
+          sourceColumn.tasks.splice(taskIndex, 1)
+          targetColumn.tasks.push({ ...this.selectedTask, ...updatedTask })
+          this.selectedColumn = targetColumn
+        }
+
+        this.selectedTask = { ...this.selectedTask, ...updatedTask }
+
+        this.closeAllModals()
+        toast.success('Task updated successfully')
+        return true
       } catch (error) {
         console.error('Failed to edit task:', error)
         const message =
@@ -319,25 +428,29 @@ export const useBoardStore = defineStore('board', {
           'Could not update task. Please try again.'
         toast.error(message)
         return false
+      } finally {
+        this.isSubmitting = false
       }
-      return false
     },
 
     async deleteTask() {
-      if (!this.selectedTask) return;
+      if (!this.selectedTask) return false
+
+      this.isSubmitting = true
 
       try {
         await $fetch(`/api/tasks/${this.selectedTask.id}`, {
           method: 'DELETE'
-        });
+        })
 
-        const index = this.selectedColumn.tasks.indexOf(this.selectedTask);
+        const index = this.selectedColumn.tasks.indexOf(this.selectedTask)
         if (index !== -1) {
-          this.selectedColumn.tasks.splice(index, 1);
+          this.selectedColumn.tasks.splice(index, 1)
         }
-        
-        this.closeAllModals();
+
+        this.closeAllModals()
         toast.success('Task deleted successfully')
+        return true
       } catch (error) {
         console.error('Failed to delete task:', error)
         const message =
@@ -346,6 +459,9 @@ export const useBoardStore = defineStore('board', {
           error?.message ||
           'Could not delete task. Please try again.'
         toast.error(message)
+        return false
+      } finally {
+        this.isSubmitting = false
       }
     },
   }

@@ -46,6 +46,10 @@ const ringStyle = computed(() => {
   border-radius: 50%;
   animation: app-spinner-spin 0.8s linear infinite;
 }
+html.dark .app-spinner__ring {
+  border-color: color-mix(in srgb, white 35%, transparent);
+  border-top-color: var(--primary);
+}
 
 @keyframes app-spinner-spin {
   to {

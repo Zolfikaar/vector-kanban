@@ -1,8 +1,10 @@
 <script setup>
 import { computed, ref, watchEffect } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useBoardStore } from '~/stores/board'
 
 const boardStore = useBoardStore()
+const { isSubmitting } = storeToRefs(boardStore)
 
 const hasTriedSubmit = ref(false)
 const isTitleInvalid = ref(false)
@@ -16,12 +18,12 @@ const taskDraft = ref({
   subtasks: ['']
 })
 
-const hasAnyNonEmptySubtask = computed(() =>
-  taskDraft.value.subtasks.some((subtask) => subtask.trim())
+const hasEmptySubtask = computed(() =>
+  taskDraft.value.subtasks.some((subtask) => !subtask.trim())
 )
 
 const isSubtaskInvalid = (subtask) =>
-  hasTriedSubmit.value && hasAnyNonEmptySubtask.value && !subtask.trim()
+  hasTriedSubmit.value && !subtask.trim()
 
 watchEffect(() => {
   const selectedTask = boardStore.selectedTask
@@ -42,6 +44,18 @@ watchEffect(() => {
   isTitleInvalid.value = false
 })
 
+const trimTitle = () => {
+  taskDraft.value.title = taskDraft.value.title.trim()
+}
+
+const trimDescription = () => {
+  taskDraft.value.description = taskDraft.value.description.trim()
+}
+
+const trimSubtask = (index) => {
+  taskDraft.value.subtasks[index] = taskDraft.value.subtasks[index].trim()
+}
+
 const addNewSubtask = () => {
   taskDraft.value.subtasks.push('')
 }
@@ -56,40 +70,36 @@ const removeSubtask = (index) => {
 }
 
 const submitEdit = async () => {
-  hasTriedSubmit.value = true
-  isTitleInvalid.value = !taskDraft.value.title.trim()
+  if (isSubmitting.value) return
 
-  if (isTitleInvalid.value) return
+  hasTriedSubmit.value = true
+  trimTitle()
+  isTitleInvalid.value = !taskDraft.value.title
+
+  if (isTitleInvalid.value || hasEmptySubtask.value) return
   if (!boardStore.selectedTask) return
+
+  taskDraft.value.subtasks.forEach((_, index) => trimSubtask(index))
 
   const updatedTask = {
     ...boardStore.selectedTask,
-    title: taskDraft.value.title.trim(),
-    description: taskDraft.value.description.trim(),
+    title: taskDraft.value.title,
+    description: taskDraft.value.description,
     columnId:
       taskDraft.value.columnId != null
         ? Number(taskDraft.value.columnId)
         : null,
-    // التأكد من إرسال الـ subtasks بالتنسيق الذي يتوقعه الستور
-    subtasks: taskDraft.value.subtasks
-      .map((subtaskTitle, index) => {
-        const previousSubtask = boardStore.selectedTask.subtasks?.[index]
-        return {
-          id: previousSubtask?.id, // أضفنا الـ id هنا لضمان عدم ضياع الربط
-          title: subtaskTitle.trim(),
-          isCompleted: previousSubtask?.isCompleted ?? false
-        }
-      })
-      .filter((subtask) => subtask.title)
+    subtasks: taskDraft.value.subtasks.map((subtaskTitle, index) => {
+      const previousSubtask = boardStore.selectedTask.subtasks?.[index]
+      return {
+        id: previousSubtask?.id,
+        title: subtaskTitle,
+        isCompleted: previousSubtask?.isCompleted ?? false
+      }
+    })
   }
 
-  // انتظار عملية التعديل لضمان نجاحها قبل أي خطوة أخرى
-  const success = await boardStore.editTask(updatedTask)
-
-  if (success) {
-    // يمكنك إضافة رسالة نجاح هنا إذا أردت
-    console.log('Task updated successfully')
-  }
+  await boardStore.editTask(updatedTask)
 }
 </script>
 
@@ -99,30 +109,54 @@ const submitEdit = async () => {
 
     <form @submit.prevent="submitEdit">
       <div class="input-row">
-        <label>Title</label>
-        <input v-model="taskDraft.title" type="text" :class="{ error: isTitleInvalid }" />
+        <div class="field-label-row">
+          <label>Title</label>
+          <span v-if="isTitleInvalid" class="field-error">Can't be empty</span>
+        </div>
+        <input
+          v-model="taskDraft.title"
+          type="text"
+          :class="{ error: isTitleInvalid }"
+          @blur="trimTitle"
+        />
       </div>
 
       <div class="input-row">
         <label>Description</label>
-        <textarea v-model="taskDraft.description" rows="5"
-          placeholder="e.g. It’s always good to take a break. This 15 minute break will recharge the batteries a little." />
+        <textarea
+          v-model="taskDraft.description"
+          rows="5"
+          placeholder="e.g. It’s always good to take a break. This 15 minute break will recharge the batteries a little."
+          @blur="trimDescription"
+        />
       </div>
 
       <div class="subtasks">
         <div class="col-row">
           <label>Subtasks</label>
 
-          <div v-for="(subtask, index) in taskDraft.subtasks" :key="index" class="col-input"
-            :class="{ 'has-error': isSubtaskInvalid(subtask) }">
-            <input v-model="taskDraft.subtasks[index]" type="text" placeholder="e.g. Make coffee"
-              :class="{ error: isSubtaskInvalid(subtask) }">
+          <div
+            v-for="(subtask, index) in taskDraft.subtasks"
+            :key="index"
+            class="col-input"
+            :class="{ 'has-error': isSubtaskInvalid(subtask) }"
+          >
+            <div class="col-input-row">
+              <div class="subtask-field">
+                <input
+                  v-model="taskDraft.subtasks[index]"
+                  type="text"
+                  placeholder="e.g. Make coffee"
+                  :class="{ error: isSubtaskInvalid(subtask) }"
+                  @blur="trimSubtask(index)"
+                >
+                <span v-if="isSubtaskInvalid(subtask)" class="subtask-error">Can't be empty</span>
+              </div>
 
-            <span v-if="isSubtaskInvalid(subtask)" class="error-message">Can’t be empty</span>
-
-            <button type="button" class="remove-subtask-btn" @click="removeSubtask(index)">
-              <Icon name="icon-cross" :size="16" />
-            </button>
+              <button type="button" class="remove-subtask-btn" @click="removeSubtask(index)">
+                <Icon name="icon-cross" :size="16" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -140,7 +174,14 @@ const submitEdit = async () => {
         </select>
       </div>
 
-      <button type="submit" class="btn-primary updateTaskBtn">Save Changes</button>
+      <button
+        type="submit"
+        class="btn-primary updateTaskBtn"
+        :disabled="isSubmitting"
+      >
+        <AppSpinner v-if="isSubmitting" :size="18" label="Saving task" class="edit-task__spinner" />
+        <span>{{ isSubmitting ? 'Saving…' : 'Save Changes' }}</span>
+      </button>
     </form>
   </div>
 </template>
@@ -158,6 +199,18 @@ const submitEdit = async () => {
   gap: 0.5rem;
 }
 
+.edit-task form .field-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.edit-task form .field-error {
+  color: var(--danger);
+  font-weight: 700;
+  font-size: 12px;
+}
+
 .edit-task form textarea {
   resize: none;
   min-height: 112px;
@@ -169,27 +222,36 @@ const submitEdit = async () => {
 }
 
 .edit-task form .subtasks .col-row .col-input {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 12px;
   margin-bottom: 12px;
 }
 
-.edit-task form .subtasks .col-row .col-input input {
-  width: calc(100% - 40px);
-  height: 40px;
-  padding-right: 130px;
+.edit-task form .subtasks .col-row .col-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.edit-task form .subtasks .col-row .col-input .error-message {
+.edit-task form .subtasks .col-row .subtask-field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.edit-task form .subtasks .col-row .subtask-field input {
+  width: 100%;
+  height: 40px;
+  padding-right: 7.5rem;
+}
+
+.edit-task form .subtasks .col-row .subtask-error {
   position: absolute;
-  right: 52px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--danger);
   font-weight: 700;
   font-size: 12px;
+  pointer-events: none;
 }
 
 .edit-task form .subtasks .col-row .col-input .remove-subtask-btn {
@@ -265,10 +327,21 @@ const submitEdit = async () => {
 
 .updateTaskBtn {
   margin-top: 8px;
-  display: block;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  gap: 10px;
   width: 100%;
   height: 44px;
+}
+
+.updateTaskBtn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.edit-task__spinner {
+  position: relative;
 }
 
 .add-subtask-btn {

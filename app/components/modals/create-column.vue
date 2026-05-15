@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useBoardStore } from '~/stores/board'
 
 const boardStore = useBoardStore()
+const { isSubmitting } = storeToRefs(boardStore)
 const selectedBoard = computed(() => boardStore.selectedBoard)
 
 const emit = defineEmits(['update:openCreateColumnModal'])
@@ -14,17 +16,12 @@ const props = defineProps({
   }
 })
 
-const closeCreateColumnModal = () => {
-  emit('update:openCreateColumnModal', false)
-}
-
-const isEmptyName = ref(false)
 const hasTriedSubmit = ref(false)
 
 const columns = ref([
   {
     id: crypto.randomUUID(),
-    name: '',
+    title: '',
     tasks: []
   }
 ])
@@ -32,136 +29,147 @@ const columns = ref([
 watch(() => props.openCreateColumnModal, (val) => {
   if (val) {
     hasTriedSubmit.value = false
-    isEmptyName.value = false
     columns.value = [{
       id: crypto.randomUUID(),
-      name: '',
+      title: '',
       tasks: []
     }]
   }
 })
 
+const trimColumnTitle = (col) => {
+  col.title = col.title.trim()
+}
 
-const AddNewColumn = () => {
+const addNewColumn = () => {
   hasTriedSubmit.value = false
-  isEmptyName.value = false
   columns.value.push({
     id: crypto.randomUUID(),
-    name: '',
+    title: '',
     tasks: []
   })
 }
 
-const RemoveColumn = (index) => {
+const removeColumn = (index) => {
   columns.value.splice(index, 1)
 }
 
-const isColumnInvalid = (col) => hasTriedSubmit.value && !col.name.trim()
+const isAnyColumnEmpty = computed(() =>
+  columns.value.some((col) => !col.title.trim())
+)
+const isColumnInvalid = (col) => hasTriedSubmit.value && !col.title.trim()
 
-const AddColumn = () => {
+const submitAddColumns = async () => {
+  if (isSubmitting.value) return
+
   hasTriedSubmit.value = true
+  columns.value.forEach(trimColumnTitle)
 
-  if (columns.value.some(col => col.name.trim() === '')) {
-    isEmptyName.value = true
-    return
+  if (isAnyColumnEmpty.value) return
+
+  const success = await boardStore.addColumnToBoard(columns.value)
+  if (success) {
+    columns.value = [{
+      id: crypto.randomUUID(),
+      title: '',
+      tasks: []
+    }]
+    emit('update:openCreateColumnModal', false)
   }
-
-  isEmptyName.value = false
-
-  boardStore.addColumnToBoard(columns.value)
-
-  closeCreateColumnModal()
-  columns.value = []
 }
 </script>
 
 <template>
   <div class="modal-global">
-
-    <h1>{{ selectedBoard?.name }}</h1>
+    <h1>{{ selectedBoard?.title }}</h1>
     <div class="fields">
-
       <div class="columns">
-
         <div class="col-row" id="newColRow">
-
           <label class="medium">Column Name</label>
-          <span class="err-msg" v-if="isEmptyName">Can't be empty</span>
-          <div class="col-input" v-for="(col, index) in columns" :key="col.id">
 
-            <input type="text" placeholder="e.g. Todo" v-model="col.name" :class="{ error: isColumnInvalid(col) }" />
-
-            <button type="button" @click="RemoveColumn(index)">
-              <Icon name="icon-cross" :size="16" />
-            </button>
-
+          <div
+            v-for="(col, index) in columns"
+            :key="col.id"
+            class="col-input"
+          >
+            <span v-if="isColumnInvalid(col)" class="field-error">Can't be empty</span>
+            <div class="col-input-row">
+              <input
+                v-model="col.title"
+                type="text"
+                placeholder="e.g. Todo"
+                :class="{ error: isColumnInvalid(col) }"
+                @blur="trimColumnTitle(col)"
+              >
+              <button type="button" @click="removeColumn(index)">
+                <Icon name="icon-cross" :size="16" />
+              </button>
+            </div>
           </div>
-
-
         </div>
-
       </div>
-
     </div>
 
     <div class="btns">
-      <button class="add-column-btn" @click="AddNewColumn">+ Add New Column</button>
-      <button class="btn-primary create-btn" @click="AddColumn">Add Column</button>
+      <button type="button" class="add-column-btn" @click="addNewColumn">
+        + Add New Column
+      </button>
+      <button
+        type="button"
+        class="btn-primary create-btn"
+        :disabled="isSubmitting"
+        @click="submitAddColumns"
+      >
+        <AppSpinner v-if="isSubmitting" :size="18" label="Adding column" />
+        <span>{{ isSubmitting ? 'Adding…' : 'Add Column' }}</span>
+      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.fields {}
-
-.fields .board-name {
-  margin-bottom: 20px;
-}
-
-.fields .columns {}
-
-.fields .columns .col-row {}
-
 .fields .columns .col-row .col-input {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   margin-bottom: 10px;
 }
 
-.fields .board-name label,
 .fields .columns .col-row label {
   color: var(--muted);
   display: inline-block;
   margin-bottom: 5px;
 }
 
-.fields .board-name input,
-.fields .columns .col-row .col-input input {
-  width: 100%;
-  height: 40px;
-  border: 1px solid var(--muted);
-  border-radius: 5px;
-  padding-left: 10px;
-}
-
-.fields .board-name input:focus {
-  outline-color: unset;
-}
-
-.err-msg {
-  color: red;
-  float: right;
-}
-
 .fields .columns .col-row .col-input input {
   width: calc(100% - 40px);
+  height: 40px;
+  border: 1px solid var(--input-border);
+  border-radius: 5px;
+  padding-left: 10px;
+  background: var(--card-topbar-sidebar);
+  color: var(--text);
+}
+
+.field-error {
+  color: var(--danger);
+  font-weight: 700;
+  font-size: 12px;
+  text-align: right;
+}
+
+.col-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.col-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.col-input-row input {
+  flex: 1;
+  min-width: 0;
 }
 
 .fields .columns .col-row .col-input button {
@@ -185,7 +193,6 @@ const AddColumn = () => {
   border-color: var(--danger);
 }
 
-
 .btns button {
   width: 100%;
   height: 40px;
@@ -199,22 +206,24 @@ const AddColumn = () => {
 
 .btns .create-btn {
   margin-top: 20px;
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btns .create-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
 }
 
 .btns .add-column-btn {
   color: var(--primary);
-  background-color: #9797971a;
+  background-color: var(--secondary-btn);
 }
 
-html.dark .btns .add-column-btn {
-  background-color: white;
-}
-
-.btns .add-column-btn:hover,
-html.dark .btns .add-column-btn:hover {
+.btns .add-column-btn:hover {
   background-color: var(--primary-hover);
   color: white;
 }
-
 </style>

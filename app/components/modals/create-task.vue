@@ -8,9 +8,23 @@ const { isSubmitting } = storeToRefs(boardStore)
 
 const isTitleInvalid = ref(false)
 const hasTriedSubmit = ref(false)
-const hasAnyNonEmptySubtask = computed(() =>
-  boardStore.createTaskDraft.subtasks.some((subtask) => subtask.trim())
+
+const hasEmptySubtask = computed(() =>
+  boardStore.createTaskDraft.subtasks.some((subtask) => !subtask.trim())
 )
+
+const trimTitle = () => {
+  boardStore.createTaskDraft.title = boardStore.createTaskDraft.title.trim()
+}
+
+const trimDescription = () => {
+  boardStore.createTaskDraft.description = boardStore.createTaskDraft.description.trim()
+}
+
+const trimSubtask = (index) => {
+  boardStore.createTaskDraft.subtasks[index] =
+    boardStore.createTaskDraft.subtasks[index].trim()
+}
 
 const addNewSubtask = () => {
   boardStore.createTaskDraft.subtasks.push('')
@@ -26,15 +40,16 @@ const removeSubtask = (index) => {
 }
 
 const isSubtaskInvalid = (subtask) =>
-  hasTriedSubmit.value && hasAnyNonEmptySubtask.value && !subtask.trim()
+  hasTriedSubmit.value && !subtask.trim()
 
 const submitTask = () => {
   if (isSubmitting.value) return
 
   hasTriedSubmit.value = true
-  isTitleInvalid.value = !boardStore.createTaskDraft.title.trim()
+  trimTitle()
+  isTitleInvalid.value = !boardStore.createTaskDraft.title
 
-  if (isTitleInvalid.value) return
+  if (isTitleInvalid.value || hasEmptySubtask.value) return
 
   boardStore.createTask()
 }
@@ -47,13 +62,16 @@ const submitTask = () => {
 
     <form @submit.prevent="submitTask">
       <div class="input-row">
-
-        <label>Title</label>
+        <div class="field-label-row">
+          <label>Title</label>
+          <span v-if="isTitleInvalid" class="field-error">Can't be empty</span>
+        </div>
         <input
           v-model="boardStore.createTaskDraft.title"
           type="text"
           placeholder="e.g. Take coffee break"
           :class="{ error: isTitleInvalid }"
+          @blur="trimTitle"
         />
       </div>
 
@@ -64,6 +82,7 @@ const submitTask = () => {
           v-model="boardStore.createTaskDraft.description"
           rows="5"
           placeholder="e.g. It’s always good to take a break. This 15 minute break will recharge the batteries a little."
+          @blur="trimDescription"
         />
       </div>
 
@@ -80,17 +99,21 @@ const submitTask = () => {
             :class="{ 'has-error': isSubtaskInvalid(subtask) }"
           >
 
-            <input
-              v-model="boardStore.createTaskDraft.subtasks[index]"
-              type="text"
-              placeholder="e.g. Make coffee"
-              :class="{ error: isSubtaskInvalid(subtask) }"
-            >
-            <span v-if="isSubtaskInvalid(subtask)" class="error-message">Can’t be empty</span>
-
-            <button type="button" class="remove-subtask-btn" @click="removeSubtask(index)">
-              <Icon name="icon-cross" :size="16" />
-            </button>
+            <div class="col-input-row">
+              <div class="subtask-field">
+                <input
+                  v-model="boardStore.createTaskDraft.subtasks[index]"
+                  type="text"
+                  placeholder="e.g. Make coffee"
+                  :class="{ error: isSubtaskInvalid(subtask) }"
+                  @blur="trimSubtask(index)"
+                >
+                <span v-if="isSubtaskInvalid(subtask)" class="subtask-error">Can't be empty</span>
+              </div>
+              <button type="button" class="remove-subtask-btn" @click="removeSubtask(index)">
+                <Icon name="icon-cross" :size="16" />
+              </button>
+            </div>
 
           </div>
 
@@ -140,6 +163,18 @@ const submitTask = () => {
   gap: 0.5rem;
 }
 
+.create-task form .field-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.create-task form .field-error {
+  color: var(--danger);
+  font-weight: 700;
+  font-size: 12px;
+}
+
 .create-task form textarea {
   resize: none;
   min-height: 112px;
@@ -150,27 +185,36 @@ const submitTask = () => {
   margin-bottom: 8px;
 }
 .create-task form .subtasks .col-row .col-input {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 12px;
   margin-bottom: 12px;
 }
 
-.create-task form .subtasks .col-row .col-input input {
-  width: calc(100% - 40px);
-  height: 40px;
-  padding-right: 130px;
+.create-task form .subtasks .col-row .col-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.create-task form .subtasks .col-row .col-input .error-message {
+.create-task form .subtasks .col-row .subtask-field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.create-task form .subtasks .col-row .subtask-field input {
+  width: 100%;
+  height: 40px;
+  padding-right: 7.5rem;
+}
+
+.create-task form .subtasks .col-row .subtask-error {
   position: absolute;
-  right: 52px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--danger);
   font-weight: 700;
   font-size: 12px;
+  pointer-events: none;
 }
 
 .create-task form .subtasks .col-row .col-input .remove-subtask-btn {

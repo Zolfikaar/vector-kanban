@@ -81,7 +81,7 @@ const getStablePaletteColor = (seedValue = '') => {
 
 
 const columnColor = computed(() => {
-  const normalizedColumnName = normalizeName(props.column?.name)
+  const normalizedColumnName = normalizeName(props.column?.title)
   const match = colors.find(
     c => c.name === normalizedColumnName
   )

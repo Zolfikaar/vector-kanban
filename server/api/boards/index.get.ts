@@ -6,6 +6,7 @@ export default defineEventHandler(async (event) => {
     const allBoards = await db.query.boards.findMany({
       with: {
         columns: {
+          orderBy: (columns, { asc }) => [asc(columns.order)],
           with: {
             tasks: {
               orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],

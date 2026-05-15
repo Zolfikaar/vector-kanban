@@ -178,7 +178,7 @@ watch(
             :key="board.id"
             type="button"
             class="mobile-board-item"
-            :class="{ active: boardStore.selectedBoard?.title === board.name }"
+            :class="{ active: boardStore.selectedBoard?.title === board.title }"
             @click="selectBoardFromMobileMenu(board)"
           >
             <Icon name="icon-board" :size="20" />
