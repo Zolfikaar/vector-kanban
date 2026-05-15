@@ -100,10 +100,10 @@ const submitTask = () => {
 
       <div class="status">
         <label>Status</label>
-        <select v-model="boardStore.createTaskDraft.status">
+        <select v-model="boardStore.createTaskDraft.columnId" >
 
-          <option v-for="col in boardStore.selectedBoard.columns" :key="col.id" :value="col.name">
-            {{ col.name }}
+          <option v-for="col in boardStore.selectedBoard.columns" :key="col.id" :value="col.id">
+            {{ col.title }}
           </option>
 
 
@@ -221,6 +221,10 @@ const submitTask = () => {
   border-color: var(--primary);
 }
 
+.create-task form select option{
+  background: var(--bg);
+  color: var(--text);
+}
 .create-task form input.error {
   border-color: var(--danger);
   outline: none;

@@ -22,21 +22,41 @@ const toggleSubtask = (subtaskIndex) => {
   boardStore.toggleSelectedTaskSubtask(subtaskIndex)
 }
 
-const updateTaskStatus = () => {
+const updateTaskStatus = async () => {
   if (!task.value || !column.value || !selectedBoard.value) return
-  if (task.value.status === column.value.name) return
+
+  const newColumnId = Number(task.value.columnId)
+  const sourceColumnId = Number(column.value.id)
+
+  if (newColumnId === sourceColumnId) return
 
   const sourceColumn = column.value
-  const destinationColumn = selectedBoard.value.columns.find((col) => col.name === task.value.status)
+  const destinationColumn = selectedBoard.value.columns.find(
+    (col) => Number(col.id) === newColumnId
+  )
   if (!destinationColumn || destinationColumn === sourceColumn) return
 
   const taskIndex = sourceColumn.tasks.indexOf(task.value)
   if (taskIndex === -1) return
 
+  try {
+    await $fetch(`/api/tasks/${task.value.id}`, {
+      method: 'PATCH',
+      body: {
+        columnId: newColumnId,
+        order: destinationColumn.tasks?.length ?? 0
+      }
+    })
+  } catch (error) {
+    console.error(error)
+    task.value.columnId = sourceColumnId
+    return
+  }
+
   sourceColumn.tasks.splice(taskIndex, 1)
+  if (!Array.isArray(destinationColumn.tasks)) destinationColumn.tasks = []
   destinationColumn.tasks.push(task.value)
   column.value = destinationColumn
-  boardStore.saveBoards()
 }
 
 function deleteSelectedTask() {

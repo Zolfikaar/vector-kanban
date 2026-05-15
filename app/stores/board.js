@@ -22,7 +22,7 @@ export const useBoardStore = defineStore('board', {
     createTaskDraft: {
       title: '',
       description: '',
-      status: null,
+      columnId: null,
       subtasks: ['']
     }
   }),
@@ -63,10 +63,6 @@ export const useBoardStore = defineStore('board', {
 
     },
 
-    // saveBoards() {
-    //   localStorage.setItem('boards', JSON.stringify(this.boards))
-    // },
-
    
    async syncTaskStatusesWithColumns() {
 
@@ -80,8 +76,8 @@ export const useBoardStore = defineStore('board', {
       this.selectedBoard.columns.forEach((column) => {
         if (Array.isArray(column.tasks)) {
           column.tasks.forEach((task, index) => {
-            // تحديث الحالة محلياً (كما كان سابقاً)
-            task.status = column.name 
+            // Keep local task.columnId in sync with the column it sits under
+            task.columnId = column.id
             
             // إرسال طلب التحديث لقاعدة البيانات
             // نفترض أن الـ API يستقبل الـ columnId والـ order الجديد
@@ -177,11 +173,11 @@ export const useBoardStore = defineStore('board', {
       return true
     },
 
-    resetCreateTaskDraft(status = null) {
+    resetCreateTaskDraft(columnId = null) {
       this.createTaskDraft = {
         title: '',
         description: '',
-        status,
+        columnId,
         subtasks: ['']
       }
     },
@@ -204,137 +200,126 @@ export const useBoardStore = defineStore('board', {
       this.resetCreateTaskDraft()
       this.isCreateTaskModalOpen = false
     },
-
-    // createTask() {
-    //   const title = this.createTaskDraft.title.trim()
-    //   const status = this.createTaskDraft.status
-
-    //   if (!this.selectedBoard || !title || !status) return false
-
-    //   const targetColumn = this.selectedBoard.columns.find((column) => column.name === status)
-
-    //   if (!targetColumn) return false
-    //   if (!Array.isArray(targetColumn.tasks)) {
-    //     targetColumn.tasks = []
-    //   }
-
-    //   const newTask = {
-    //     title,
-    //     description: this.createTaskDraft.description.trim(),
-    //     status,
-    //     subtasks: this.createTaskDraft.subtasks
-    //       .map((subtaskTitle) => subtaskTitle.trim())
-    //       .filter(Boolean)
-    //       .map((subtaskTitle) => ({
-    //         title: subtaskTitle,
-    //         isCompleted: false
-    //       }))
-    //   }
-
-    //   targetColumn.tasks.push(newTask)
-    //   // this.saveBoards()
-    //   this.closeCreateTaskModal()
-
-    //   return true
-    // },
-
+    
     async createTask() {
+      const draft = this.createTaskDraft
+      if (!draft.title?.trim() || draft.columnId == null) return
+
       try {
+        const targetColumn = this.selectedBoard.columns.find(
+          (c) => Number(c.id) === Number(draft.columnId)
+        )
         const newTask = await $fetch('/api/tasks', {
           method: 'POST',
-          body: this.createTaskDraft
+          body: {
+            title: draft.title.trim(),
+            description: draft.description?.trim() ?? '',
+            columnId: Number(draft.columnId),
+            order: targetColumn?.tasks?.length ?? 0,
+            subtasks: draft.subtasks.filter((s) => s.trim())
+          }
         })
-        
-        // أضفها محلياً بعد نجاح السيرفر
-        this.selectedColumn.tasks.push(newTask)
+
+        if (targetColumn) {
+          if (!Array.isArray(targetColumn.tasks)) targetColumn.tasks = []
+          targetColumn.tasks.push(newTask)
+        }
+
         this.closeAllModals()
       } catch (error) {
-        console.error("Error saving task:", error)
+        console.error('Error saving task:', error)
       }
     },
 
     openCreateTaskModal(column = null) {
-      const defaultStatus = column?.name ?? this.selectedBoard?.columns?.[0]?.name ?? null
+      const defaultColumnId =
+        column?.id ?? this.selectedBoard?.columns?.[0]?.id ?? null
 
-      this.resetCreateTaskDraft(defaultStatus)
-      this.selectedColumn = column
+      this.resetCreateTaskDraft(defaultColumnId)
+      this.selectedColumn =
+        column ??
+        this.selectedBoard?.columns?.find(
+          (c) => Number(c.id) === Number(defaultColumnId)
+        ) ??
+        null
       this.isCreateTaskModalOpen = true
     },
 
-    // editTask(updatedTask) {
-    //   if (!this.selectedBoard || !this.selectedColumn || !this.selectedTask) return false
-
-    //   const sourceColumn = this.selectedColumn
-    //   const taskIndex = sourceColumn.tasks.indexOf(this.selectedTask)
-    //   const targetColumn =
-    //     this.selectedBoard.columns.find((column) => column.name === updatedTask.status) ||
-    //     sourceColumn
-
-    //   if (taskIndex !== -1) {
-    //     if (!Array.isArray(targetColumn.tasks)) {
-    //       targetColumn.tasks = []
-    //     }
-
-    //     if (targetColumn === sourceColumn) {
-    //       sourceColumn.tasks[taskIndex] = updatedTask
-    //     } else {
-    //       sourceColumn.tasks.splice(taskIndex, 1)
-    //       targetColumn.tasks.push(updatedTask)
-    //       this.selectedColumn = targetColumn
-    //     }
-
-    //     this.selectedTask = updatedTask
-    //     // this.saveBoards()
-    //     this.closeAllModals()
-    //     return true
-    //   }
-    //   return false
-    // },
-
-    // deleteTask() {
-    //   if (!this.selectedBoard || !this.selectedColumn || !this.selectedTask) return false
-
-    //   const taskIndex = this.selectedColumn.tasks.indexOf(this.selectedTask)
-
-    //   if (taskIndex !== -1) {
-    //     this.selectedColumn.tasks.splice(taskIndex, 1)
-    //     // this.saveBoards()
-    //     // this.isDeleteTaskModalOpen = false
-    //     this.closeAllModals()
-    //     return true
-    //   }
-
-    //   return false
-    // },
-
     async editTask(updatedTask) {
+      // 1. التحقق من وجود البيانات اللازمة
       if (!this.selectedBoard || !this.selectedColumn || !this.selectedTask) return false
-      
+
       try {
+        const sourceColumn = this.selectedColumn
+        const taskIndex = sourceColumn.tasks.indexOf(this.selectedTask)
+        
+        const targetColumnId = Number(updatedTask.columnId)
+        const targetColumn =
+          this.selectedBoard.columns.find(
+            (column) => Number(column.id) === targetColumnId
+          ) || sourceColumn
+
+        // 2. إرسال التحديث للسيرفر (PATCH)
         await $fetch(`/api/tasks/${this.selectedTask.id}`, {
           method: 'PATCH',
-          body: updatedTask
+          body: {
+            title: updatedTask.title,
+            description: updatedTask.description,
+            columnId: targetColumn.id, // نرسل الـ ID الحقيقي للعمود
+            // يمكنك إضافة order هنا إذا كنت تدعم تغيير الترتيب أثناء التعديل
+          }
         })
+
+        // 3. التحديث المحلي للواجهة (بعد نجاح طلب السيرفر)
+        if (taskIndex !== -1) {
+          // التأكد من أن مصفوفة المهام في العمود الهدف موجودة
+          if (!Array.isArray(targetColumn.tasks)) {
+            targetColumn.tasks = []
+          }
+
+          if (Number(targetColumn.id) === Number(sourceColumn.id)) {
+            // إذا كان التعديل في نفس العمود، نحدث البيانات فقط
+            sourceColumn.tasks[taskIndex] = { ...this.selectedTask, ...updatedTask }
+          } else {
+            // إذا تغير العمود، نحذفها من القديم ونضيفها للجديد
+            sourceColumn.tasks.splice(taskIndex, 1)
+            targetColumn.tasks.push({ ...this.selectedTask, ...updatedTask })
+            
+            // تحديث العمود المختار ليكون العمود الجديد
+            this.selectedColumn = targetColumn
+          }
+
+          // تحديث المهمة المختارة بالبيانات الجديدة
+          this.selectedTask = { ...this.selectedTask, ...updatedTask }
+          
+          this.closeAllModals()
+          return true
+        }
       } catch (error) {
-        console.error("Error editing task:", error)
+        console.error("فشل تعديل المهمة في قاعدة البيانات:", error)
+        // هنا يمكنك إضافة رسالة خطأ للمستخدم (تنبيه)
+        return false
       }
+      return false
     },
 
     async deleteTask() {
-      if (!this.selectedTask) return
-      
+      if (!this.selectedTask) return;
+
       try {
         await $fetch(`/api/tasks/${this.selectedTask.id}`, {
           method: 'DELETE'
-        })
+        });
+
+        const index = this.selectedColumn.tasks.indexOf(this.selectedTask);
+        if (index !== -1) {
+          this.selectedColumn.tasks.splice(index, 1);
+        }
         
-        // احذفها محلياً بعد نجاح السيرفر
-        const index = this.selectedColumn.tasks.indexOf(this.selectedTask)
-        this.selectedColumn.tasks.splice(index, 1)
-        this.closeAllModals()
+        this.closeAllModals();
       } catch (error) {
-        console.error("Error deleting task:", error)
+        console.error("Failed to delete task:", error);
       }
-    }
+    },
   }
 })

@@ -8,7 +8,7 @@ const hasTriedSubmit = ref(false)
 const isTitleInvalid = ref(false)
 
 const taskDraft = ref({
-  id:null,
+  id: null,
   title: '',
   description: '',
   order: null,
@@ -25,7 +25,6 @@ const isSubtaskInvalid = (subtask) =>
 
 watchEffect(() => {
   const selectedTask = boardStore.selectedTask
-  const selectedColumnName = boardStore.selectedColumn?.name
 
   if (!selectedTask) return
 
@@ -56,7 +55,7 @@ const removeSubtask = (index) => {
   taskDraft.value.subtasks.splice(index, 1)
 }
 
-const submitEdit = () => {
+const submitEdit = async () => {
   hasTriedSubmit.value = true
   isTitleInvalid.value = !taskDraft.value.title.trim()
 
@@ -67,12 +66,16 @@ const submitEdit = () => {
     ...boardStore.selectedTask,
     title: taskDraft.value.title.trim(),
     description: taskDraft.value.description.trim(),
-    order: taskDraft.value.order,
-    columnId: taskDraft.value.columnId,
+    columnId:
+      taskDraft.value.columnId != null
+        ? Number(taskDraft.value.columnId)
+        : null,
+    // التأكد من إرسال الـ subtasks بالتنسيق الذي يتوقعه الستور
     subtasks: taskDraft.value.subtasks
       .map((subtaskTitle, index) => {
         const previousSubtask = boardStore.selectedTask.subtasks?.[index]
         return {
+          id: previousSubtask?.id, // أضفنا الـ id هنا لضمان عدم ضياع الربط
           title: subtaskTitle.trim(),
           isCompleted: previousSubtask?.isCompleted ?? false
         }
@@ -80,7 +83,13 @@ const submitEdit = () => {
       .filter((subtask) => subtask.title)
   }
 
-  boardStore.editTask(updatedTask)
+  // انتظار عملية التعديل لضمان نجاحها قبل أي خطوة أخرى
+  const success = await boardStore.editTask(updatedTask)
+
+  if (success) {
+    // يمكنك إضافة رسالة نجاح هنا إذا أردت
+    console.log('Task updated successfully')
+  }
 }
 </script>
 
@@ -91,38 +100,23 @@ const submitEdit = () => {
     <form @submit.prevent="submitEdit">
       <div class="input-row">
         <label>Title</label>
-        <input
-          v-model="taskDraft.title"
-          type="text"
-          :class="{ error: isTitleInvalid }"
-        />
+        <input v-model="taskDraft.title" type="text" :class="{ error: isTitleInvalid }" />
       </div>
 
       <div class="input-row">
         <label>Description</label>
-        <textarea
-          v-model="taskDraft.description"
-          rows="5"
-          placeholder="e.g. It’s always good to take a break. This 15 minute break will recharge the batteries a little."
-        />
+        <textarea v-model="taskDraft.description" rows="5"
+          placeholder="e.g. It’s always good to take a break. This 15 minute break will recharge the batteries a little." />
       </div>
 
       <div class="subtasks">
         <div class="col-row">
           <label>Subtasks</label>
 
-          <div
-            v-for="(subtask, index) in taskDraft.subtasks"
-            :key="index"
-            class="col-input"
-            :class="{ 'has-error': isSubtaskInvalid(subtask) }"
-          >
-            <input
-              v-model="taskDraft.subtasks[index]"
-              type="text"
-              placeholder="e.g. Make coffee"
-              :class="{ error: isSubtaskInvalid(subtask) }"
-            >
+          <div v-for="(subtask, index) in taskDraft.subtasks" :key="index" class="col-input"
+            :class="{ 'has-error': isSubtaskInvalid(subtask) }">
+            <input v-model="taskDraft.subtasks[index]" type="text" placeholder="e.g. Make coffee"
+              :class="{ error: isSubtaskInvalid(subtask) }">
 
             <span v-if="isSubtaskInvalid(subtask)" class="error-message">Can’t be empty</span>
 

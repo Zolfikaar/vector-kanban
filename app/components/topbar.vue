@@ -495,9 +495,25 @@ watch(
     z-index: 1;
   }
 
-  .mobile-board-item.active {
+  .mobile-board-item {
     width: 240px;
     max-width: calc(100% - 24px);
+  }
+
+  .mobile-board-item:not(.active):hover {
+    background-color: #9797971a;
+    color: var(--primary);
+    cursor: pointer;
+  }
+
+  html.dark .mobile-board-item:not(.active):hover {
+    background-color: white;
+    color: var(--primary);
+  }
+
+  .mobile-board-item.active {
+    background-color: var(--primary);
+    color: white;
   }
 
   .all-boards {
