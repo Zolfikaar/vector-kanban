@@ -1,9 +1,11 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { useBoardStore } from '~/stores/board'
+import { useUiStore } from '~/stores/ui'
 
 const boardStore = useBoardStore()
-const { isSubmitting } = storeToRefs(boardStore)
+const uiStore = useUiStore()
+const { isSubmitting } = storeToRefs(uiStore)
 
 const deleteTask = async () => {
   if (isSubmitting.value) return
@@ -16,7 +18,7 @@ const deleteTask = async () => {
     <h1>Delete this task?</h1>
 
     <p class="medium">
-      Are you sure you want to delete the <b>'{{ boardStore.selectedTask.title }}'</b> task and its subtasks? This action cannot be reversed.
+      Are you sure you want to delete the <b>'{{ uiStore.selectedTask.title }}'</b> task and its subtasks? This action cannot be reversed.
     </p>
 
     <div class="btns">
@@ -33,7 +35,7 @@ const deleteTask = async () => {
         type="button"
         class="cancel-btn secondary-btn"
         :disabled="isSubmitting"
-        @click="boardStore.closeAllModals()"
+        @click="uiStore.closeAllModals()"
       >
         Cancel
       </button>

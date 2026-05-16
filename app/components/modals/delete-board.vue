@@ -1,9 +1,11 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { useBoardStore } from '~/stores/board'
+import { useUiStore } from '~/stores/ui'
 
 const boardStore = useBoardStore()
-const { isSubmitting } = storeToRefs(boardStore)
+const uiStore = useUiStore()
+const { isSubmitting } = storeToRefs(uiStore)
 
 const deleteBoard = async () => {
   if (isSubmitting.value || !boardStore.selectedBoard) return
@@ -32,7 +34,7 @@ const deleteBoard = async () => {
         type="button"
         class="cancel-btn secondary-btn"
         :disabled="isSubmitting"
-        @click="boardStore.closeAllModals()"
+        @click="uiStore.closeAllModals()"
       >
         Cancel
       </button>

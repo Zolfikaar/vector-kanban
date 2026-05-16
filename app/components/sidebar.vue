@@ -1,54 +1,28 @@
 <script setup>
-import Switch from './switch.vue';
+import Switch from './switch.vue'
+import { storeToRefs } from 'pinia'
 import { useBoardStore } from '~/stores/board'
+import { useUiStore } from '~/stores/ui'
+
 const boardStore = useBoardStore()
-const emit = defineEmits(['update:hidden', 'update:openCreateBoardModal'])
+const uiStore = useUiStore()
+const { isSidebarHidden, isDarkTheme } = storeToRefs(uiStore)
 
-const THEME_STORAGE_KEY = 'theme'
-const DarkModeEnabled = ref(false)
-
-watch(DarkModeEnabled, (enabled) => {
-  if (typeof window === 'undefined') return
-
-  const html = document.documentElement
-
-  if (enabled) {
-    html.classList.add('dark')
-  } else {
-    html.classList.remove('dark')
-  }
-
-  localStorage.setItem(THEME_STORAGE_KEY, enabled ? 'dark' : 'light')
+const darkModeEnabled = computed({
+  get: () => isDarkTheme.value,
+  set: (enabled) => uiStore.setTheme(enabled ? 'dark' : 'light'),
 })
 
-onMounted(() => {
-  const storedTheme = localStorage.getItem(THEME_STORAGE_KEY)
-  DarkModeEnabled.value = storedTheme === 'dark'
-})
-
-const props = defineProps({
-  hidden: {
-    type: Boolean,
-    default: false
-  },
-  openCreateBoardModal: {
-    type: Boolean,
-    default: false
-  }
-})
-
-
-function HideSidebar() {
-  emit('update:hidden', true)
+function hideSidebar() {
+  uiStore.hideSidebar()
 }
 
-const createBoard = () => {
-  emit('update:openCreateBoardModal', true)
+function createBoard() {
+  uiStore.openCreateBoardModal()
 }
-
 </script>
 <template>
-  <section class="sidebar" :class="{ hidden: props.hidden }">
+  <section class="sidebar" :class="{ hidden: isSidebarHidden }">
     <div class="content">
 
       <h3 class="all-boards">ALL BOARDS ({{ boardStore.boards.length }})</h3>
@@ -75,12 +49,12 @@ const createBoard = () => {
     <div class="controls">
       <div class="theme-controls">
         <Icon name="icon-light-theme" :size="20"
-          :style="{ color: !DarkModeEnabled ? 'var(--primary)' : 'var(--text)' }" />
-        <Switch v-model="DarkModeEnabled" />
+          :style="{ color: !darkModeEnabled ? 'var(--primary)' : 'var(--text)' }" />
+        <Switch v-model="darkModeEnabled" />
         <Icon name="icon-dark-theme" :size="20"
-          :style="{ color: DarkModeEnabled ? 'var(--primary)' : 'var(--text)' }" />
+          :style="{ color: darkModeEnabled ? 'var(--primary)' : 'var(--text)' }" />
       </div>
-      <button class="toggle-sidebar" @click="HideSidebar">
+      <button class="toggle-sidebar" @click="hideSidebar">
         <Icon name="icon-hide-sidebar" :size="20" />
         <p>Hide Sidebar</p>
       </button>

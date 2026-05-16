@@ -2,9 +2,11 @@
 import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useBoardStore } from '~/stores/board'
+import { useUiStore } from '~/stores/ui'
 
 const boardStore = useBoardStore()
-const { isSubmitting } = storeToRefs(boardStore)
+const uiStore = useUiStore()
+const { isSubmitting } = storeToRefs(uiStore)
 const selectedBoard = computed(() => boardStore.selectedBoard)
 
 const emit = defineEmits(['update:openCreateColumnModal'])

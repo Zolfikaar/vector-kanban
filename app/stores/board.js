@@ -1,105 +1,58 @@
 import { defineStore } from 'pinia'
 import { toast } from 'vue-sonner'
+import { useUiStore } from './ui'
 
 export const useBoardStore = defineStore('board', {
   state: () => ({
     boards: [],
-    
-    isLoading: false,
-    isSubmitting: false,
     selectedBoard: null,
-    selectedTask: null,
-    selectedColumn: null,
-
-    isViewTaskModalOpen: false,
-    isCreateBoardModalOpen: false,
-    isDeleteBoardModalOpen: false,
-    isEditBoardModalOpen: false,
-    isCreateColumnModalOpen: false,
-    isEditTaskModalOpen: false,
-    isDeleteTaskModalOpen: false,
-    isCreateTaskModalOpen: false,
-    isActiveMobileOverlay: false,
-
-    createTaskDraft: {
-      title: '',
-      description: '',
-      columnId: null,
-      subtasks: ['']
-    }
+    isLoading: false,
   }),
 
-  getters: {
-    isOverlayActive: (state) =>
-      state.isViewTaskModalOpen ||
-      state.isCreateBoardModalOpen ||
-      state.isDeleteBoardModalOpen ||
-      state.isEditBoardModalOpen ||
-      state.isCreateColumnModalOpen ||
-      state.isEditTaskModalOpen ||
-      state.isDeleteTaskModalOpen ||
-      state.isCreateTaskModalOpen
-  },
-
   actions: {
-
     async loadBoards() {
       this.isLoading = true
 
       try {
-        
         const data = await $fetch('/api/boards')
 
         this.boards = data || []
-        
-        // Set the first board as selected by default if available
+
         if (this.boards.length > 0 && !this.selectedBoard) {
           this.selectedBoard = this.boards[0]
         }
       } catch (error) {
-        console.error("Error loading boards:", error)
+        console.error('Error loading boards:', error)
       } finally {
         this.isLoading = false
       }
-
     },
 
-   
-   async syncTaskStatusesWithColumns() {
-
-
+    async syncTaskStatusesWithColumns() {
       const board = this.selectedBoard
       if (!board?.columns) return
 
-      // مصفوفة لنجمع فيها كل طلبات التحديث ونرسلها مرة واحدة (اختياري للأداء)
       const updatePromises = []
 
       this.selectedBoard.columns.forEach((column) => {
         if (Array.isArray(column.tasks)) {
           column.tasks.forEach((task, index) => {
-            // Keep local task.columnId in sync with the column it sits under
             task.columnId = column.id
-            
-            // إرسال طلب التحديث لقاعدة البيانات
-            // نفترض أن الـ API يستقبل الـ columnId والـ order الجديد
+
             const promise = $fetch(`/api/tasks/${task.id}`, {
               method: 'PATCH',
               body: {
                 columnId: column.id,
-                order: index // الترتيب الجديد للمهمة داخل العمود
-              }
-            }).catch(err => console.error(`Failed to update task ${task.id}:`, err))
-            
+                order: index,
+              },
+            }).catch((err) =>
+              console.error(`Failed to update task ${task.id}:`, err)
+            )
+
             updatePromises.push(promise)
           })
         }
       })
-
-      // حفظ التغييرات في الـ localStorage كنسخة احتياطية
-      // this.saveBoards()
-
-      // انتظار اكتمال التحديثات (اختياري)
-      // await Promise.all(updatePromises)
     },
 
     selectBoard(board) {
@@ -116,7 +69,8 @@ export const useBoardStore = defineStore('board', {
     },
 
     async createBoard({ title, columns }) {
-      this.isSubmitting = true
+      const ui = useUiStore()
+      ui.isSubmitting = true
 
       try {
         const newBoard = await $fetch('/api/boards', {
@@ -124,36 +78,37 @@ export const useBoardStore = defineStore('board', {
           body: {
             title: title.trim(),
             columns: columns.map((column) => ({
-              title: column.title.trim()
-            }))
-          }
+              title: column.title.trim(),
+            })),
+          },
         })
 
-        this.closeAllModals()
+        ui.closeAllModals()
         this.boards.push(newBoard)
         this.selectBoard(newBoard)
         toast.success('Board created successfully')
         return true
       } catch (error) {
         console.error('Error creating board:', error)
-        this.closeAllModals()
+        ui.closeAllModals()
         toast.error(
           this.getErrorMessage(error, 'Could not create board. Please try again.')
         )
         return false
       } finally {
-        this.isSubmitting = false
+        ui.isSubmitting = false
       }
     },
 
     async deleteBoard(board) {
       if (!board?.id) return false
 
-      this.isSubmitting = true
+      const ui = useUiStore()
+      ui.isSubmitting = true
 
       try {
         await $fetch(`/api/boards/${board.id}`, {
-          method: 'DELETE'
+          method: 'DELETE',
         })
 
         const index = this.boards.findIndex((b) => b.id === board.id)
@@ -166,18 +121,18 @@ export const useBoardStore = defineStore('board', {
           this.selectedBoard = this.boards[0] ?? null
         }
 
-        this.closeAllModals()
+        ui.closeAllModals()
         toast.success('Board deleted successfully')
         return true
       } catch (error) {
         console.error('Error deleting board:', error)
-        this.closeAllModals()
+        ui.closeAllModals()
         toast.error(
           this.getErrorMessage(error, 'Could not delete board. Please try again.')
         )
         return false
       } finally {
-        this.isSubmitting = false
+        ui.isSubmitting = false
       }
     },
 
@@ -187,7 +142,8 @@ export const useBoardStore = defineStore('board', {
     ) {
       if (!this.selectedBoard?.id) return false
 
-      this.isSubmitting = true
+      const ui = useUiStore()
+      ui.isSubmitting = true
 
       try {
         const updatedBoard = await $fetch(
@@ -198,9 +154,9 @@ export const useBoardStore = defineStore('board', {
               title: title.trim(),
               columns: columns.map((column) => ({
                 id: column.id ?? undefined,
-                title: column.title.trim()
-              }))
-            }
+                title: column.title.trim(),
+              })),
+            },
           }
         )
 
@@ -212,18 +168,18 @@ export const useBoardStore = defineStore('board', {
         }
 
         this.selectedBoard = updatedBoard
-        this.closeAllModals()
+        ui.closeAllModals()
         toast.success(successMessage)
         return true
       } catch (error) {
         console.error('Error updating board:', error)
-        this.closeAllModals()
+        ui.closeAllModals()
         toast.error(
           this.getErrorMessage(error, 'Could not update board. Please try again.')
         )
         return false
       } finally {
-        this.isSubmitting = false
+        ui.isSubmitting = false
       }
     },
 
@@ -232,7 +188,7 @@ export const useBoardStore = defineStore('board', {
 
       const sanitized = newColumns
         .map((column) => ({
-          title: (column.title ?? column.name ?? '').trim()
+          title: (column.title ?? column.name ?? '').trim(),
         }))
         .filter((column) => column.title)
 
@@ -241,71 +197,37 @@ export const useBoardStore = defineStore('board', {
       const existingColumns = (this.selectedBoard.columns || []).map(
         (column) => ({
           id: column.id,
-          title: column.title
+          title: column.title,
         })
       )
 
       return this.editBoard(
         {
           title: this.selectedBoard.title,
-          columns: [...existingColumns, ...sanitized]
+          columns: [...existingColumns, ...sanitized],
         },
         { successMessage: 'Column(s) added successfully' }
       )
     },
 
-    openCreateColumnModal() {
-      this.isCreateColumnModalOpen = true
-    },
-
-    openTaskModal(task, column) {
-
-      this.selectedTask = task
-      this.selectedColumn = column
-      this.isViewTaskModalOpen = true
-
-    },
-
     toggleSelectedTaskSubtask(subtaskIndex) {
-      if (!this.selectedTask?.subtasks?.[subtaskIndex]) return false
+      const ui = useUiStore()
+      if (!ui.selectedTask?.subtasks?.[subtaskIndex]) return false
 
-      this.selectedTask.subtasks[subtaskIndex].isCompleted =
-        !this.selectedTask.subtasks[subtaskIndex].isCompleted
+      ui.selectedTask.subtasks[subtaskIndex].isCompleted =
+        !ui.selectedTask.subtasks[subtaskIndex].isCompleted
 
-      // this.saveBoards()
       return true
     },
 
-    resetCreateTaskDraft(columnId = null) {
-      this.createTaskDraft = {
-        title: '',
-        description: '',
-        columnId,
-        subtasks: ['']
-      }
+    openCreateTaskModal(column = null) {
+      useUiStore().prepareCreateTaskModal(column, this.selectedBoard)
     },
 
-    closeAllModals() {
-
-      this.isViewTaskModalOpen = false
-      this.isCreateBoardModalOpen = false
-      this.isDeleteBoardModalOpen = false
-      this.isEditBoardModalOpen = false
-      this.isCreateColumnModalOpen = false
-      this.isEditTaskModalOpen = false
-      this.isDeleteTaskModalOpen = false
-      this.isCreateTaskModalOpen = false
-      this.isActiveMobileOverlay = false
-
-    },
-
-    closeCreateTaskModal() {
-      this.resetCreateTaskDraft()
-      this.isCreateTaskModalOpen = false
-    },
-    
     async createTask() {
-      const draft = this.createTaskDraft
+      const ui = useUiStore()
+      const draft = ui.createTaskDraft
+
       if (
         !draft.title?.trim() ||
         draft.columnId == null ||
@@ -318,7 +240,7 @@ export const useBoardStore = defineStore('board', {
         (c) => Number(c.id) === Number(draft.columnId)
       )
 
-      this.isSubmitting = true
+      ui.isSubmitting = true
       try {
         const newTask = await $fetch('/api/tasks', {
           method: 'POST',
@@ -327,8 +249,8 @@ export const useBoardStore = defineStore('board', {
             description: draft.description?.trim() ?? '',
             columnId: Number(draft.columnId),
             order: targetColumn?.tasks?.length ?? 0,
-            subtasks: draft.subtasks.map((s) => s.trim())
-          }
+            subtasks: draft.subtasks.map((s) => s.trim()),
+          },
         })
 
         if (targetColumn && newTask) {
@@ -336,7 +258,7 @@ export const useBoardStore = defineStore('board', {
           targetColumn.tasks.unshift(newTask)
         }
 
-        this.closeAllModals()
+        ui.closeAllModals()
         toast.success('Task created successfully')
         return true
       } catch (error) {
@@ -349,26 +271,14 @@ export const useBoardStore = defineStore('board', {
         toast.error(message)
         return false
       } finally {
-        this.isSubmitting = false
+        ui.isSubmitting = false
       }
     },
 
-    openCreateTaskModal(column = null) {
-      const defaultColumnId =
-        column?.id ?? this.selectedBoard?.columns?.[0]?.id ?? null
-
-      this.resetCreateTaskDraft(defaultColumnId)
-      this.selectedColumn =
-        column ??
-        this.selectedBoard?.columns?.find(
-          (c) => Number(c.id) === Number(defaultColumnId)
-        ) ??
-        null
-      this.isCreateTaskModalOpen = true
-    },
-
     async editTask(updatedTask) {
-      if (!this.selectedBoard || !this.selectedColumn || !this.selectedTask) {
+      const ui = useUiStore()
+
+      if (!this.selectedBoard || !ui.selectedColumn || !ui.selectedTask) {
         return false
       }
 
@@ -379,11 +289,11 @@ export const useBoardStore = defineStore('board', {
         return false
       }
 
-      this.isSubmitting = true
+      ui.isSubmitting = true
 
       try {
-        const sourceColumn = this.selectedColumn
-        const taskIndex = sourceColumn.tasks.indexOf(this.selectedTask)
+        const sourceColumn = ui.selectedColumn
+        const taskIndex = sourceColumn.tasks.indexOf(ui.selectedTask)
 
         const targetColumnId = Number(updatedTask.columnId)
         const targetColumn =
@@ -391,13 +301,13 @@ export const useBoardStore = defineStore('board', {
             (column) => Number(column.id) === targetColumnId
           ) || sourceColumn
 
-        await $fetch(`/api/tasks/${this.selectedTask.id}`, {
+        await $fetch(`/api/tasks/${ui.selectedTask.id}`, {
           method: 'PATCH',
           body: {
             title: updatedTask.title,
             description: updatedTask.description,
-            columnId: targetColumn.id
-          }
+            columnId: targetColumn.id,
+          },
         })
 
         if (taskIndex === -1) return false
@@ -407,16 +317,19 @@ export const useBoardStore = defineStore('board', {
         }
 
         if (Number(targetColumn.id) === Number(sourceColumn.id)) {
-          sourceColumn.tasks[taskIndex] = { ...this.selectedTask, ...updatedTask }
+          sourceColumn.tasks[taskIndex] = {
+            ...ui.selectedTask,
+            ...updatedTask,
+          }
         } else {
           sourceColumn.tasks.splice(taskIndex, 1)
-          targetColumn.tasks.push({ ...this.selectedTask, ...updatedTask })
-          this.selectedColumn = targetColumn
+          targetColumn.tasks.push({ ...ui.selectedTask, ...updatedTask })
+          ui.selectedColumn = targetColumn
         }
 
-        this.selectedTask = { ...this.selectedTask, ...updatedTask }
+        ui.selectedTask = { ...ui.selectedTask, ...updatedTask }
 
-        this.closeAllModals()
+        ui.closeAllModals()
         toast.success('Task updated successfully')
         return true
       } catch (error) {
@@ -429,26 +342,27 @@ export const useBoardStore = defineStore('board', {
         toast.error(message)
         return false
       } finally {
-        this.isSubmitting = false
+        ui.isSubmitting = false
       }
     },
 
     async deleteTask() {
-      if (!this.selectedTask) return false
+      const ui = useUiStore()
+      if (!ui.selectedTask) return false
 
-      this.isSubmitting = true
+      ui.isSubmitting = true
 
       try {
-        await $fetch(`/api/tasks/${this.selectedTask.id}`, {
-          method: 'DELETE'
+        await $fetch(`/api/tasks/${ui.selectedTask.id}`, {
+          method: 'DELETE',
         })
 
-        const index = this.selectedColumn.tasks.indexOf(this.selectedTask)
+        const index = ui.selectedColumn.tasks.indexOf(ui.selectedTask)
         if (index !== -1) {
-          this.selectedColumn.tasks.splice(index, 1)
+          ui.selectedColumn.tasks.splice(index, 1)
         }
 
-        this.closeAllModals()
+        ui.closeAllModals()
         toast.success('Task deleted successfully')
         return true
       } catch (error) {
@@ -461,8 +375,8 @@ export const useBoardStore = defineStore('board', {
         toast.error(message)
         return false
       } finally {
-        this.isSubmitting = false
+        ui.isSubmitting = false
       }
     },
-  }
+  },
 })

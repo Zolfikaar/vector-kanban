@@ -1,10 +1,10 @@
-import { pgTable, serial, text, integer, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, integer, timestamp, boolean, uuid } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const boards = pgTable('boards', {
   id: serial('id').primaryKey(),
   title: text('title').notNull(),
-  userId: integer('user_id'), // سيتم ربطه بـ Supabase Auth لاحقاً
+  userId: uuid('user_id'),
   createdAt: timestamp('created_at').defaultNow(),
 });
 

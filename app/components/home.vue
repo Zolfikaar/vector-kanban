@@ -1,8 +1,10 @@
 <script setup>
 import { useBoardStore } from '~/stores/board'
+import { useUiStore } from '~/stores/ui'
 import { storeToRefs } from 'pinia'
 
 const boardStore = useBoardStore()
+const uiStore = useUiStore()
 const { selectedBoard } = storeToRefs(boardStore)
 
 const isLoading = computed(() => boardStore.isLoading)
@@ -22,7 +24,7 @@ const isLoading = computed(() => boardStore.isLoading)
       <div class="columns" v-else-if="selectedBoard?.columns && selectedBoard.columns?.length > 0">
         <Column v-for="column in selectedBoard.columns" :key="column?.id" :column="column" />
 
-        <div class="add-column" @click="boardStore.openCreateColumnModal()">
+        <div class="add-column" @click="uiStore.openCreateColumnModal()">
 
           <p>
             + Add New Column
@@ -33,7 +35,7 @@ const isLoading = computed(() => boardStore.isLoading)
 
       <div class="no-columns" v-else>
         <p>This board is empty. Create a new column to get started.</p>
-        <button class="btn-primary" @click="boardStore.openCreateColumnModal()">
+        <button class="btn-primary" @click="uiStore.openCreateColumnModal()">
           + Add New Column
         </button>
       </div>

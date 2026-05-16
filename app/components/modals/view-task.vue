@@ -1,17 +1,13 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useBoardStore } from '~/stores/board'
+import { useUiStore, MODAL_NAMES } from '~/stores/ui'
 import { storeToRefs } from 'pinia'
 
 const boardStore = useBoardStore()
+const uiStore = useUiStore()
 const { selectedBoard } = storeToRefs(boardStore)
-
-const props = defineProps({
-  hidden: {
-    type: Boolean,
-    default: false
-  }
-})
+const { selectedTask: task, selectedColumn: column } = storeToRefs(uiStore)
 
 const showDetailsBox = ref(false)
 const dropdown = ref(null)
@@ -60,13 +56,11 @@ const updateTaskStatus = async () => {
 }
 
 function deleteSelectedTask() {
-  boardStore.isViewTaskModalOpen = false
-  boardStore.isDeleteTaskModalOpen = true
+  uiStore.switchModal(MODAL_NAMES.DELETE_TASK)
   showDetailsBox.value = false
 }
 function editSelectedTask() {
-  boardStore.isViewTaskModalOpen = false
-  boardStore.isEditTaskModalOpen = true
+  uiStore.switchModal(MODAL_NAMES.EDIT_TASK)
   showDetailsBox.value = false
 }
 
@@ -84,8 +78,6 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleDocumentClick)
 })
-
-const { selectedTask: task, selectedColumn: column } = storeToRefs(boardStore)
 
 </script>
 

@@ -1,24 +1,21 @@
 <script setup>
 import 'vue-sonner/style.css'
 import { Toaster } from 'vue-sonner'
+import { storeToRefs } from 'pinia'
 import { useBoardStore } from './stores/board'
+import { useUiStore } from './stores/ui'
 
 const boardStore = useBoardStore()
-
-const isSidebarHidden = ref(false)
-
-function showSidebar() {
-  isSidebarHidden.value = false
-}
+const uiStore = useUiStore()
+const { isSidebarHidden } = storeToRefs(uiStore)
 
 onMounted(async () => {
-
+  uiStore.initTheme()
   await boardStore.loadBoards()
 
   if (boardStore.boards.length && !boardStore.selectedBoard) {
     boardStore.selectBoard(boardStore.boards[0])
   }
-
 })
 </script>
 
@@ -26,22 +23,20 @@ onMounted(async () => {
 
   <section class="app-shell">
 
-    <Topbar v-model:hidden="isSidebarHidden" v-model:openDeleteBoardModal="boardStore.isDeleteBoardModalOpen"
-      v-model:openEditBoardModal="boardStore.isEditBoardModalOpen"
-      v-model:openMobileBoardsDropdown="boardStore.isActiveMobileOverlay" />
+    <Topbar />
 
     <section class="content-shell">
 
-      <Sidebar v-model:hidden="isSidebarHidden" v-model:openCreateBoardModal="boardStore.isCreateBoardModalOpen" />
+      <Sidebar />
 
       <section class="main-area">
 
-        <div class="show-sidebar" @click="showSidebar" v-if="isSidebarHidden">
+        <div class="show-sidebar" @click="uiStore.showSidebar()" v-if="isSidebarHidden">
           <Icon name="icon-show-sidebar" :size="20" />
         </div>
 
         <div class="main-content">
-          <Home v-model:openCreateColumnModal="boardStore.isCreateColumnModalOpen" />
+          <Home />
         </div>
 
       </section>
@@ -50,25 +45,23 @@ onMounted(async () => {
 
   </section>
 
-  <section class="overlay" :class="{ isactive: boardStore.isOverlayActive }" @click="boardStore.closeAllModals()" />
+  <section class="overlay" :class="{ isactive: uiStore.isOverlayActive }" @click="uiStore.closeAllModals()" />
 
-  <CreateBoard v-if="boardStore.isCreateBoardModalOpen"
-    v-model:openCreateBoardModal="boardStore.isCreateBoardModalOpen" />
+  <CreateBoard v-if="uiStore.isCreateBoardModalOpen" />
 
-  <DeleteBoard v-if="boardStore.isDeleteBoardModalOpen" />
+  <DeleteBoard v-if="uiStore.isDeleteBoardModalOpen" />
 
-  <EditBoard v-if="boardStore.isEditBoardModalOpen" />
+  <EditBoard v-if="uiStore.isEditBoardModalOpen" />
 
-  <CreateColumn v-if="boardStore.isCreateColumnModalOpen"
-    v-model:openCreateColumnModal="boardStore.isCreateColumnModalOpen" />
+  <CreateColumn v-if="uiStore.isCreateColumnModalOpen" />
 
-  <ViewTask v-if="boardStore.isViewTaskModalOpen" />
+  <ViewTask v-if="uiStore.isViewTaskModalOpen" />
 
-  <EditTask v-if="boardStore.isEditTaskModalOpen" />
+  <EditTask v-if="uiStore.isEditTaskModalOpen" />
 
-  <DeleteTask v-if="boardStore.isDeleteTaskModalOpen" />
+  <DeleteTask v-if="uiStore.isDeleteTaskModalOpen" />
 
-  <CreateTask v-if="boardStore.isCreateTaskModalOpen" />
+  <CreateTask v-if="uiStore.isCreateTaskModalOpen" />
 
   <Toaster theme="dark" rich-colors :close-button="false" />
 

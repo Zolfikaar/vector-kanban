@@ -1,42 +1,22 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useBoardStore } from '~/stores/board'
+import { useUiStore, MODAL_NAMES } from '~/stores/ui'
 import { storeToRefs } from 'pinia'
 
-const emit = defineEmits([
-  'update:openDeleteBoardModal',
-  'update:openEditBoardModal',
-  'update:openMobileBoardsDropdown'
-])
-
 const boardStore = useBoardStore()
+const uiStore = useUiStore()
 const { selectedBoard } = storeToRefs(boardStore)
-
-const props = defineProps({
-  hidden: {
-    type: Boolean,
-    default: false
-  },
-  openDeleteBoardModal: {
-    type: Boolean,
-    default: false
-  },
-  openEditBoardModal: {
-    type: Boolean,
-    default: false
-  },
-  openMobileBoardsDropdown: {
-    type: Boolean,
-    default: false
-  }
-})
+const { isSidebarHidden, isDarkTheme, isActiveMobileOverlay } = storeToRefs(uiStore)
 
 const showDetailsBox = ref(false)
 const showMobileBoardsMenu = ref(false)
 const dropdown = ref(null)
 const mobileBoardsDropdown = ref(null)
-const THEME_STORAGE_KEY = 'theme'
-const darkModeEnabled = ref(false)
+const darkModeEnabled = computed({
+  get: () => isDarkTheme.value,
+  set: (enabled) => uiStore.setTheme(enabled ? 'dark' : 'light'),
+})
 
 function ToggleShowMoreBtn() {
   showDetailsBox.value = !showDetailsBox.value
@@ -44,7 +24,7 @@ function ToggleShowMoreBtn() {
 
 function closeMobileBoards() {
   showMobileBoardsMenu.value = false
-  emit('update:openMobileBoardsDropdown', false)
+  uiStore.isActiveMobileOverlay = false
 }
 
 function handleDocumentClick(event) {
@@ -63,11 +43,11 @@ function handleDocumentClick(event) {
 }
 
 function deleteSelectedBoard() {
-  emit('update:openDeleteBoardModal', true)
+  uiStore.openModal(MODAL_NAMES.DELETE_BOARD)
   showDetailsBox.value = false
 }
 function editSelectedBoard() {
-  emit('update:openEditBoardModal', true)
+  uiStore.openModal(MODAL_NAMES.EDIT_BOARD)
   showDetailsBox.value = false
 }
 
@@ -79,9 +59,9 @@ function openCreateTaskModal() {
 const isBoardControlsDisabled = computed(() => !selectedBoard.value)
 
 function toggleMobileBoardsMenu() {
-  const next = !props.openMobileBoardsDropdown
+  const next = !isActiveMobileOverlay.value
   showMobileBoardsMenu.value = next
-  emit('update:openMobileBoardsDropdown', next)
+  uiStore.isActiveMobileOverlay = next
 }
 
 function selectBoardFromMobileMenu(board) {
@@ -91,14 +71,10 @@ function selectBoardFromMobileMenu(board) {
 
 function createBoardFromMobileMenu() {
   closeMobileBoards()
-  boardStore.isCreateBoardModalOpen = true
+  uiStore.openCreateBoardModal()
 }
 
 onMounted(() => {
-  const storedTheme = localStorage.getItem(THEME_STORAGE_KEY)
-  darkModeEnabled.value = storedTheme === 'dark'
-  document.documentElement.classList.toggle('dark', darkModeEnabled.value)
-
   document.addEventListener('click', handleDocumentClick)
 })
 
@@ -106,25 +82,16 @@ onUnmounted(() => {
   document.removeEventListener('click', handleDocumentClick)
 })
 
-watch(darkModeEnabled, (enabled) => {
-  document.documentElement.classList.toggle('dark', enabled)
-  localStorage.setItem(THEME_STORAGE_KEY, enabled ? 'dark' : 'light')
-})
-
-watch(
-  () => props.openMobileBoardsDropdown,
-  (v) => {
-    showMobileBoardsMenu.value = v
-  },
-  { immediate: true }
-)
+watch(isActiveMobileOverlay, (v) => {
+  showMobileBoardsMenu.value = v
+}, { immediate: true })
 
 </script>
 
 <template>
   <div class="topbar" :class="{ 'mobile-board-open': showMobileBoardsMenu }">
     <div class="topbar-row">
-      <div class="logo" :class="hidden ? 'shrinked' : ''">
+      <div class="logo" :class="isSidebarHidden ? 'shrinked' : ''">
         <Icon class="logo-mobile" name="logo-mobile" :size="30" />
         <Icon class="logo-icon" name="logo-light" :size="160" v-if="darkModeEnabled" />
         <Icon class="logo-icon" name="logo-dark" :size="160" v-else />

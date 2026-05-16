@@ -1,9 +1,11 @@
 <script setup>
 import { useBoardStore } from '~/stores/board'
+import { useUiStore } from '~/stores/ui'
 import draggable from 'vuedraggable'
 import { computed, watchEffect } from 'vue'
 
 const boardStore = useBoardStore()
+const uiStore = useUiStore()
 
 const props = defineProps({
   column: {
@@ -118,7 +120,7 @@ const columnColor = computed(() => {
           <template #item="{ element }">
             <Task
               :task="element"
-              @click="boardStore.openTaskModal(element, column)"
+              @click="uiStore.openTaskModal(element, column)"
             />
           </template>
         </draggable>
@@ -128,7 +130,7 @@ const columnColor = computed(() => {
               v-for="task in column.tasks"
               :key="task.title"
               :task="task"
-              @click="boardStore.openTaskModal(task, column)"
+              @click="uiStore.openTaskModal(task, column)"
             />
           </div>
         </template>

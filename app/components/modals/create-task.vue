@@ -2,41 +2,43 @@
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useBoardStore } from '~/stores/board'
+import { useUiStore } from '~/stores/ui'
 
 const boardStore = useBoardStore()
-const { isSubmitting } = storeToRefs(boardStore)
+const uiStore = useUiStore()
+const { isSubmitting, createTaskDraft } = storeToRefs(uiStore)
 
 const isTitleInvalid = ref(false)
 const hasTriedSubmit = ref(false)
 
 const hasEmptySubtask = computed(() =>
-  boardStore.createTaskDraft.subtasks.some((subtask) => !subtask.trim())
+  createTaskDraft.value.subtasks.some((subtask) => !subtask.trim())
 )
 
 const trimTitle = () => {
-  boardStore.createTaskDraft.title = boardStore.createTaskDraft.title.trim()
+  createTaskDraft.value.title = createTaskDraft.value.title.trim()
 }
 
 const trimDescription = () => {
-  boardStore.createTaskDraft.description = boardStore.createTaskDraft.description.trim()
+  createTaskDraft.value.description = createTaskDraft.value.description.trim()
 }
 
 const trimSubtask = (index) => {
-  boardStore.createTaskDraft.subtasks[index] =
-    boardStore.createTaskDraft.subtasks[index].trim()
+  createTaskDraft.value.subtasks[index] =
+    createTaskDraft.value.subtasks[index].trim()
 }
 
 const addNewSubtask = () => {
-  boardStore.createTaskDraft.subtasks.push('')
+  createTaskDraft.value.subtasks.push('')
 }
 
 const removeSubtask = (index) => {
-  if (boardStore.createTaskDraft.subtasks.length === 1) {
-    boardStore.createTaskDraft.subtasks[0] = ''
+  if (createTaskDraft.value.subtasks.length === 1) {
+    createTaskDraft.value.subtasks[0] = ''
     return
   }
 
-  boardStore.createTaskDraft.subtasks.splice(index, 1)
+  createTaskDraft.value.subtasks.splice(index, 1)
 }
 
 const isSubtaskInvalid = (subtask) =>
@@ -47,7 +49,7 @@ const submitTask = () => {
 
   hasTriedSubmit.value = true
   trimTitle()
-  isTitleInvalid.value = !boardStore.createTaskDraft.title
+  isTitleInvalid.value = !createTaskDraft.value.title
 
   if (isTitleInvalid.value || hasEmptySubtask.value) return
 
@@ -67,7 +69,7 @@ const submitTask = () => {
           <span v-if="isTitleInvalid" class="field-error">Can't be empty</span>
         </div>
         <input
-          v-model="boardStore.createTaskDraft.title"
+          v-model="createTaskDraft.title"
           type="text"
           placeholder="e.g. Take coffee break"
           :class="{ error: isTitleInvalid }"
@@ -79,7 +81,7 @@ const submitTask = () => {
 
         <label>Description</label>
         <textarea
-          v-model="boardStore.createTaskDraft.description"
+          v-model="createTaskDraft.description"
           rows="5"
           placeholder="e.g. It’s always good to take a break. This 15 minute break will recharge the batteries a little."
           @blur="trimDescription"
@@ -93,7 +95,7 @@ const submitTask = () => {
           <label>Subtasks</label>
 
           <div
-            v-for="(subtask, index) in boardStore.createTaskDraft.subtasks"
+            v-for="(subtask, index) in createTaskDraft.subtasks"
             :key="index"
             class="col-input"
             :class="{ 'has-error': isSubtaskInvalid(subtask) }"
@@ -102,7 +104,7 @@ const submitTask = () => {
             <div class="col-input-row">
               <div class="subtask-field">
                 <input
-                  v-model="boardStore.createTaskDraft.subtasks[index]"
+                  v-model="createTaskDraft.subtasks[index]"
                   type="text"
                   placeholder="e.g. Make coffee"
                   :class="{ error: isSubtaskInvalid(subtask) }"
@@ -127,7 +129,7 @@ const submitTask = () => {
 
       <div class="status">
         <label>Status</label>
-        <select v-model="boardStore.createTaskDraft.columnId" >
+        <select v-model="createTaskDraft.columnId" >
 
           <option v-for="col in boardStore.selectedBoard.columns" :key="col.id" :value="col.id">
             {{ col.title }}

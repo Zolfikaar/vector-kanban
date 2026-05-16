@@ -2,9 +2,11 @@
 import { ref, computed, watchEffect } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useBoardStore } from '~/stores/board'
+import { useUiStore } from '~/stores/ui'
 
 const boardStore = useBoardStore()
-const { isSubmitting } = storeToRefs(boardStore)
+const uiStore = useUiStore()
+const { isSubmitting } = storeToRefs(uiStore)
 
 const hasTriedSubmit = ref(false)
 
@@ -81,7 +83,7 @@ const submitUpdateBoard = async () => {
     <div class="header">
       <h1>Edit Board</h1>
 
-      <button type="button" class="close-btn" @click="boardStore.closeAllModals()">
+      <button type="button" class="close-btn" @click="uiStore.closeAllModals()">
         <Icon name="icon-cross" :size="18" />
       </button>
     </div>

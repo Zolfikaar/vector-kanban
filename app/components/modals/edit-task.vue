@@ -2,9 +2,11 @@
 import { computed, ref, watchEffect } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useBoardStore } from '~/stores/board'
+import { useUiStore } from '~/stores/ui'
 
 const boardStore = useBoardStore()
-const { isSubmitting } = storeToRefs(boardStore)
+const uiStore = useUiStore()
+const { isSubmitting, selectedTask } = storeToRefs(uiStore)
 
 const hasTriedSubmit = ref(false)
 const isTitleInvalid = ref(false)
@@ -26,17 +28,15 @@ const isSubtaskInvalid = (subtask) =>
   hasTriedSubmit.value && !subtask.trim()
 
 watchEffect(() => {
-  const selectedTask = boardStore.selectedTask
-
-  if (!selectedTask) return
+  if (!selectedTask.value) return
 
   taskDraft.value = {
-    title: selectedTask.title ?? '',
-    description: selectedTask.description ?? '',
-    order: selectedTask.order ?? null,
-    columnId: selectedTask.columnId ?? null,
-    subtasks: selectedTask.subtasks?.length
-      ? selectedTask.subtasks.map((subtask) => subtask.title ?? '')
+    title: selectedTask.value.title ?? '',
+    description: selectedTask.value.description ?? '',
+    order: selectedTask.value.order ?? null,
+    columnId: selectedTask.value.columnId ?? null,
+    subtasks: selectedTask.value.subtasks?.length
+      ? selectedTask.value.subtasks.map((subtask) => subtask.title ?? '')
       : ['']
   }
 
@@ -77,12 +77,12 @@ const submitEdit = async () => {
   isTitleInvalid.value = !taskDraft.value.title
 
   if (isTitleInvalid.value || hasEmptySubtask.value) return
-  if (!boardStore.selectedTask) return
+  if (!selectedTask.value) return
 
   taskDraft.value.subtasks.forEach((_, index) => trimSubtask(index))
 
   const updatedTask = {
-    ...boardStore.selectedTask,
+    ...selectedTask.value,
     title: taskDraft.value.title,
     description: taskDraft.value.description,
     columnId:
@@ -90,7 +90,7 @@ const submitEdit = async () => {
         ? Number(taskDraft.value.columnId)
         : null,
     subtasks: taskDraft.value.subtasks.map((subtaskTitle, index) => {
-      const previousSubtask = boardStore.selectedTask.subtasks?.[index]
+      const previousSubtask = selectedTask.value.subtasks?.[index]
       return {
         id: previousSubtask?.id,
         title: subtaskTitle,
