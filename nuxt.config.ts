@@ -1,5 +1,14 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  app: {
+    head: {
+      title: 'Vector Kanban',
+      meta: [
+        { name: 'description', content: 'Vector Kanban — task boards and columns, developed under the UrLabs umbrella.' },
+      ],
+    },
+  },
+
   components: [
     {
       path: '~/components',

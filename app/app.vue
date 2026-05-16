@@ -63,6 +63,8 @@ onMounted(async () => {
 
   <CreateTask v-if="uiStore.isCreateTaskModalOpen" />
 
+  <DeleteColumn v-if="uiStore.isDeleteColumnModalOpen" />
+
   <Toaster theme="dark" rich-colors :close-button="false" />
 
 </template>

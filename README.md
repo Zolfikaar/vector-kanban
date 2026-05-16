@@ -1,6 +1,8 @@
-# UrLabs Kanban
+# Vector Kanban
 
-A full-stack Kanban task management application built on the [Frontend Mentor](https://www.frontendmentor.io) premium challenge design. Boards, columns, and tasks are persisted in a cloud PostgreSQL database via Supabase, with real-time drag-and-drop for reordering and moving tasks.
+A full-stack Kanban task management application built on the [Frontend Mentor](https://www.frontendmentor.io) premium challenge design.
+
+A product developed under the UrLabs umbrella. Boards, columns, and tasks are persisted in a cloud PostgreSQL database via Supabase, with real-time drag-and-drop for reordering and moving tasks.
 
 ![Design preview](./preview.jpg)
 
@@ -41,6 +43,16 @@ Create a `.env` file in the project root:
 ```env
 DATABASE_URL=your_supabase_postgres_connection_string
 ```
+
+### Database schema (Supabase)
+
+After updating `server/database/schema.ts`, apply changes to Supabase:
+
+```bash
+npx drizzle-kit push
+```
+
+Ensure `DATABASE_URL` in `.env` points at your Supabase Postgres connection string before running the command.
 
 ### Install
 
@@ -84,6 +96,7 @@ server/
 | `POST` | `/api/boards` | Create a board and its initial columns |
 | `PATCH` | `/api/boards/:id` | Update board title; add, rename, or delete columns |
 | `DELETE` | `/api/boards/:id` | Delete a board (cascades to columns, tasks, subtasks) |
+| `DELETE` | `/api/columns/:id` | Delete a column and its tasks (returns updated board) |
 | `GET` | `/api/tasks` | List tasks (if used) |
 | `POST` | `/api/tasks` | Create a task with optional subtasks |
 | `PATCH` | `/api/tasks/:id` | Update task fields or move between columns |
@@ -95,7 +108,8 @@ Board and column changes are reflected immediately in the Pinia store without a 
 
 - **Task title** — Required; shows a red border and “Can't be empty” when invalid
 - **Subtasks** — Every subtask row must have a non-empty title before create/edit; empty rows show validation errors until filled or removed with the × button
-- **Board / column names** — Required on create and edit board modals and when adding columns
+- **Board name** — Required on create and edit board modals; columns are optional when creating a board
+- **Column names** — Required when adding or editing columns; empty column rows are ignored on create
 
 ## Scripts
 

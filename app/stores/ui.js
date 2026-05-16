@@ -9,6 +9,7 @@ export const MODAL_NAMES = {
   EDIT_TASK: 'editTask',
   DELETE_TASK: 'deleteTask',
   CREATE_TASK: 'createTask',
+  DELETE_COLUMN: 'deleteColumn',
 }
 
 const THEME_STORAGE_KEY = 'theme'
@@ -52,6 +53,8 @@ export const useUiStore = defineStore('ui', {
       state.activeModalName === MODAL_NAMES.DELETE_TASK,
     isCreateTaskModalOpen: (state) =>
       state.activeModalName === MODAL_NAMES.CREATE_TASK,
+    isDeleteColumnModalOpen: (state) =>
+      state.activeModalName === MODAL_NAMES.DELETE_COLUMN,
   },
 
   actions: {

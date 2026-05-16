@@ -19,23 +19,18 @@ export default defineEventHandler(async (event) => {
     )
     .filter(Boolean)
 
-  if (columnTitles.length === 0) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'At least one column is required',
-    })
-  }
-
   try {
     const [newBoard] = await db.insert(boards).values({ title }).returning()
 
-    await db.insert(columns).values(
-      columnTitles.map((colTitle: string, index: number) => ({
-        title: colTitle,
-        order: index,
-        boardId: newBoard.id,
-      }))
-    )
+    if (columnTitles.length > 0) {
+      await db.insert(columns).values(
+        columnTitles.map((colTitle: string, index: number) => ({
+          title: colTitle,
+          order: index,
+          boardId: newBoard.id,
+        }))
+      )
+    }
 
     const board = await db.query.boards.findFirst({
       where: eq(boards.id, newBoard.id),

@@ -47,7 +47,6 @@ const addNewColumn = () => {
 }
 
 const removeColumn = (index) => {
-  if (currentBoard.value.columns.length === 1) return
   currentBoard.value.columns.splice(index, 1)
 }
 
@@ -69,11 +68,15 @@ const submitUpdateBoard = async () => {
   trimBoardTitle()
   currentBoard.value.columns.forEach(trimColumnTitle)
 
-  if (isBoardTitleEmpty.value || isAnyColumnEmpty.value) return
+  if (isBoardTitleEmpty.value) return
+
+  const columnsToSave = currentBoard.value.columns.filter((col) =>
+    col.title?.trim()
+  )
 
   await boardStore.editBoard({
     title: currentBoard.value.title,
-    columns: currentBoard.value.columns
+    columns: columnsToSave
   })
 }
 </script>
@@ -119,11 +122,7 @@ const submitUpdateBoard = async () => {
                 :class="{ error: isColumnInvalid(col) }"
                 @blur="trimColumnTitle(col)"
               >
-              <button
-                type="button"
-                :disabled="currentBoard.columns.length === 1"
-                @click="removeColumn(index)"
-              >
+              <button type="button" @click="removeColumn(index)">
                 <Icon name="icon-cross" :size="16" />
               </button>
             </div>

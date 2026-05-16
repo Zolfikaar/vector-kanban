@@ -35,13 +35,6 @@ export default defineEventHandler(async (event) => {
   const incomingColumns: Array<{ id?: number; title?: string }> =
     body.columns || []
 
-  if (incomingColumns.length === 0) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'At least one column is required',
-    })
-  }
-
   for (const col of incomingColumns) {
     if (!col.title?.trim()) {
       throw createError({

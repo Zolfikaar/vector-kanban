@@ -183,6 +183,48 @@ export const useBoardStore = defineStore('board', {
       }
     },
 
+    async deleteColumn(columnId) {
+      const ui = useUiStore()
+      if (!this.selectedBoard?.id || columnId == null) return false
+
+      ui.isSubmitting = true
+
+      try {
+        const updatedBoard = await $fetch(`/api/columns/${columnId}`, {
+          method: 'DELETE',
+        })
+
+        if (updatedBoard) {
+          const index = this.boards.findIndex((b) => b.id === updatedBoard.id)
+          if (index !== -1) {
+            this.boards[index] = updatedBoard
+          }
+          if (this.selectedBoard?.id === updatedBoard.id) {
+            this.selectedBoard = updatedBoard
+          }
+        } else if (this.selectedBoard?.columns) {
+          const colIndex = this.selectedBoard.columns.findIndex(
+            (col) => Number(col.id) === Number(columnId)
+          )
+          if (colIndex !== -1) {
+            this.selectedBoard.columns.splice(colIndex, 1)
+          }
+        }
+
+        ui.closeAllModals()
+        toast.success('Column deleted successfully')
+        return true
+      } catch (error) {
+        console.error('Error deleting column:', error)
+        toast.error(
+          this.getErrorMessage(error, 'Could not delete column. Please try again.')
+        )
+        return false
+      } finally {
+        ui.isSubmitting = false
+      }
+    },
+
     async addColumnToBoard(newColumns) {
       if (!this.selectedBoard) return false
 

@@ -11,13 +11,11 @@ const { isSubmitting } = storeToRefs(uiStore)
 const newBoard = ref({ title: '' })
 const hasTriedSubmit = ref(false)
 
-const columns = ref([
-  { id: crypto.randomUUID(), title: '', tasks: [] }
-])
+const columns = ref([])
 
 const resetModal = () => {
   newBoard.value.title = ''
-  columns.value = [{ id: crypto.randomUUID(), title: '', tasks: [] }]
+  columns.value = []
   hasTriedSubmit.value = false
 }
 
@@ -39,18 +37,14 @@ const addColumn = () => {
 }
 
 const removeColumn = (id) => {
-  if (columns.value.length === 1) return
   columns.value = columns.value.filter((c) => c.id !== id)
 }
 
 const isBoardTitleEmpty = computed(() => !newBoard.value.title.trim())
-const isAnyColumnEmpty = computed(() =>
-  columns.value.some((col) => !col.title.trim())
-)
 const isBoardTitleInvalid = computed(
   () => hasTriedSubmit.value && isBoardTitleEmpty.value
 )
-const isColumnInvalid = (col) => hasTriedSubmit.value && !col.title.trim()
+const isColumnInvalid = () => false
 
 const submitCreateBoard = async () => {
   if (isSubmitting.value) return
@@ -59,11 +53,13 @@ const submitCreateBoard = async () => {
   trimBoardTitle()
   columns.value.forEach(trimColumnTitle)
 
-  if (isBoardTitleEmpty.value || isAnyColumnEmpty.value) return
+  if (isBoardTitleEmpty.value) return
+
+  const filledColumns = columns.value.filter((col) => col.title.trim())
 
   const success = await boardStore.createBoard({
     title: newBoard.value.title,
-    columns: columns.value
+    columns: filledColumns
   })
 
   if (success) {

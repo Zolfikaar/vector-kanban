@@ -2,7 +2,8 @@
 import { useBoardStore } from '~/stores/board'
 import { useUiStore } from '~/stores/ui'
 import draggable from 'vuedraggable'
-import { computed, watchEffect } from 'vue'
+import { computed, ref, watchEffect, onMounted, onUnmounted } from 'vue'
+import { MODAL_NAMES } from '~/stores/ui'
 
 const boardStore = useBoardStore()
 const uiStore = useUiStore()
@@ -24,6 +25,42 @@ watchEffect(() => {
 const onTaskDragEnd = async () => {
   await boardStore.syncTaskStatusesWithColumns()
 }
+
+const showColumnMenu = ref(false)
+const columnMenuRef = ref(null)
+
+function toggleColumnMenu() {
+  showColumnMenu.value = !showColumnMenu.value
+}
+
+function closeColumnMenu() {
+  showColumnMenu.value = false
+}
+
+function editColumn() {
+  uiStore.openModal(MODAL_NAMES.EDIT_BOARD)
+  closeColumnMenu()
+}
+
+function openDeleteColumnModal() {
+  uiStore.selectedColumn = props.column
+  uiStore.openModal(MODAL_NAMES.DELETE_COLUMN)
+  closeColumnMenu()
+}
+
+function handleDocumentClick(event) {
+  if (columnMenuRef.value && !columnMenuRef.value.contains(event.target)) {
+    closeColumnMenu()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleDocumentClick)
+})
 
 const colors = [
   { name: 'todo', color: '#49C4E5' },
@@ -100,12 +137,29 @@ const columnColor = computed(() => {
 
 
   <div class="column">
-    <p class="column-title bold" v-if="column && column.title">
-      <span class="column-color" :style="{ backgroundColor: columnColor }"></span>
-      <span>
-        {{ column.title }} ({{ column.tasks?.length || 0 }})
-      </span>
-    </p>
+    <div class="column-header" v-if="column && column.title">
+      <p class="column-title bold">
+        <span class="column-color" :style="{ backgroundColor: columnColor }"></span>
+        <span>
+          {{ column.title }} ({{ column.tasks?.length || 0 }})
+        </span>
+      </p>
+      <div class="dropdown" ref="columnMenuRef">
+        <button
+          type="button"
+          class="show-more"
+          aria-label="Column actions"
+          @click.stop="toggleColumnMenu"
+        >
+          <Icon name="icon-vertical-ellipsis" :size="20" />
+        </button>
+
+        <div v-if="showColumnMenu" class="details-box">
+          <span class="edit" @click="editColumn">Edit Column</span>
+          <span class="delete" @click="openDeleteColumnModal">Delete Column</span>
+        </div>
+      </div>
+    </div>
 
     <div class="tasks">
       <ClientOnly>
@@ -162,12 +216,85 @@ const columnColor = computed(() => {
   flex-direction: column;
 }
 
+.column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 20px 0;
+  padding-right: 8px;
+}
+
 .column-title {
   text-transform: uppercase;
-  margin: 20px 0;
+  margin: 0;
   color: var(--muted);
   display: flex;
   align-items: center;
+}
+
+.dropdown {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.show-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--muted);
+}
+
+.show-more:hover {
+  color: var(--text);
+}
+
+.details-box {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  padding: 10px;
+  width: 195px;
+  height: 95px;
+  background-color: var(--card-topbar-sidebar);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  z-index: 10;
+}
+
+.details-box span {
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.details-box span:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.details-box .edit {
+  color: var(--muted);
+}
+
+.details-box .delete {
+  color: var(--danger);
+}
+
+.details-box .edit:hover {
+  color: var(--primary);
+}
+
+.details-box .delete:hover {
+  color: var(--danger-hover);
 }
 
 .column-color {

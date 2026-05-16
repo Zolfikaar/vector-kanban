@@ -56,7 +56,15 @@ function openCreateTaskModal() {
   boardStore.openCreateTaskModal()
 }
 
-const isBoardControlsDisabled = computed(() => !selectedBoard.value)
+const hasColumns = computed(
+  () => (selectedBoard.value?.columns?.length ?? 0) > 0
+)
+
+const isAddTaskDisabled = computed(
+  () => !selectedBoard.value || !hasColumns.value
+)
+
+const isBoardMenuDisabled = computed(() => !selectedBoard.value)
 
 function toggleMobileBoardsMenu() {
   const next = !isActiveMobileOverlay.value
@@ -108,16 +116,16 @@ watch(isActiveMobileOverlay, (v) => {
           </button>
         </div>
 
-        <div class="action-btns" :class="{ inactive: isBoardControlsDisabled }">
+        <div class="action-btns" :class="{ inactive: isAddTaskDisabled }">
 
-          <button type="button" class="btn-primary" :disabled="isBoardControlsDisabled" @click="openCreateTaskModal">
+          <button type="button" class="btn-primary" :disabled="isAddTaskDisabled" @click="openCreateTaskModal">
             <Icon name="icon-add-task-mobile" :size="15" />
             <span class="add-task-label">Add New Task</span>
           </button>
 
           <div class="dropdown" ref="dropdown">
 
-            <button type="button" class="show-more" :disabled="isBoardControlsDisabled" @click.stop="ToggleShowMoreBtn">
+            <button type="button" class="show-more" :disabled="isBoardMenuDisabled" @click.stop="ToggleShowMoreBtn">
               <Icon name="icon-vertical-ellipsis" :size="20" />
             </button>
 

@@ -58,13 +58,13 @@ function createBoard() {
         <Icon name="icon-hide-sidebar" :size="20" />
         <p>Hide Sidebar</p>
       </button>
+      <p class="about">A product by UrLabs.</p>
     </div>
   </section>
 </template>
 
 <style scoped>
 .sidebar {
-
   width: 300px;
   flex: 0 0 300px;
   background-color: var(--card-topbar-sidebar);
@@ -198,6 +198,14 @@ html.dark .board-item:not(.active):hover {
   flex-shrink: 0;
 }
 
+.about {
+  text-align: center;
+  margin: 0 45px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
 @media (max-width: 1100px) {
   .sidebar {
     width: 260px;
@@ -222,6 +230,11 @@ html.dark .board-item:not(.active):hover {
   .toggle-sidebar {
     padding-left: 24px;
     max-width: 236px;
+  }
+
+  .about {
+    margin-left: 24px;
+    margin-right: 24px;
   }
 }
 
