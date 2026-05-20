@@ -4,7 +4,7 @@ export default defineNuxtConfig({
     head: {
       title: 'Vector Kanban',
       meta: [
-        { name: 'description', content: 'Vector Kanban — task boards and columns, developed under the UrLabs umbrella.' },
+        { name: 'description', content: 'Vector Kanban — task boards and columns, developed by UrLabs.' },
       ],
     },
   },
@@ -23,12 +23,23 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   css: ['~/assets/main.css'],
-  modules: ['@pinia/nuxt'],
+  modules: [
+    '@pinia/nuxt',
+    '@nuxtjs/supabase'
+  ],
+
+  supabase: {
+    redirect: false,
+    types: null,
+  },
+
+  devServer: {
+    port: 3000,
+  },
   typescript: {
     shim: false
   },
   runtimeConfig: {
-    // أي شيء هنا يكون متاحاً فقط في السيرفر
     databaseUrl: process.env.DATABASE_URL
   },
   nitro: {

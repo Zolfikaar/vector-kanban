@@ -226,7 +226,7 @@ export const useBoardStore = defineStore('board', {
     },
 
     async addColumnToBoard(newColumns) {
-      if (!this.selectedBoard) return false
+      if (!this.selectedBoard?.id) return false
 
       const sanitized = newColumns
         .map((column) => ({
@@ -236,30 +236,76 @@ export const useBoardStore = defineStore('board', {
 
       if (!sanitized.length) return false
 
-      const existingColumns = (this.selectedBoard.columns || []).map(
-        (column) => ({
-          id: column.id,
-          title: column.title,
-        })
-      )
+      const ui = useUiStore()
+      ui.isSubmitting = true
 
-      return this.editBoard(
-        {
-          title: this.selectedBoard.title,
-          columns: [...existingColumns, ...sanitized],
-        },
-        { successMessage: 'Column(s) added successfully' }
-      )
+      try {
+        const baseOrder = (this.selectedBoard.columns || []).length
+        const created = await Promise.all(
+          sanitized.map((column, index) =>
+            $fetch('/api/columns', {
+              method: 'POST',
+              body: {
+                title: column.title,
+                boardId: this.selectedBoard.id,
+                order: baseOrder + index,
+              },
+            })
+          )
+        )
+
+        if (!this.selectedBoard.columns) {
+          this.selectedBoard.columns = []
+        }
+        this.selectedBoard.columns.push(...created)
+
+        const boardIndex = this.boards.findIndex(
+          (b) => b.id === this.selectedBoard.id
+        )
+        if (boardIndex !== -1) {
+          if (!this.boards[boardIndex].columns) {
+            this.boards[boardIndex].columns = []
+          }
+          this.boards[boardIndex].columns.push(...created)
+        }
+
+        ui.closeAllModals()
+        toast.success('Column(s) added successfully')
+        return true
+      } catch (error) {
+        console.error('Error adding column(s):', error)
+        toast.error(
+          this.getErrorMessage(error, 'Could not add column(s). Please try again.')
+        )
+        return false
+      } finally {
+        ui.isSubmitting = false
+      }
     },
 
-    toggleSelectedTaskSubtask(subtaskIndex) {
+    async toggleSelectedTaskSubtask(subtaskIndex) {
       const ui = useUiStore()
-      if (!ui.selectedTask?.subtasks?.[subtaskIndex]) return false
+      const subtask = ui.selectedTask?.subtasks?.[subtaskIndex]
+      if (!subtask?.id) return false
 
-      ui.selectedTask.subtasks[subtaskIndex].isCompleted =
-        !ui.selectedTask.subtasks[subtaskIndex].isCompleted
+      const previous = subtask.isCompleted
+      subtask.isCompleted = !previous
 
-      return true
+      try {
+        const updated = await $fetch(`/api/subtasks/${subtask.id}`, {
+          method: 'PATCH',
+          body: { isCompleted: subtask.isCompleted },
+        })
+        subtask.isCompleted = updated.isCompleted
+        return true
+      } catch (error) {
+        subtask.isCompleted = previous
+        console.error('Failed to update subtask:', error)
+        toast.error(
+          this.getErrorMessage(error, 'Could not update subtask. Please try again.')
+        )
+        return false
+      }
     },
 
     openCreateTaskModal(column = null) {
@@ -395,13 +441,23 @@ export const useBoardStore = defineStore('board', {
       ui.isSubmitting = true
 
       try {
-        await $fetch(`/api/tasks/${ui.selectedTask.id}`, {
+        const updatedBoard = await $fetch(`/api/tasks/${ui.selectedTask.id}`, {
           method: 'DELETE',
         })
 
-        const index = ui.selectedColumn.tasks.indexOf(ui.selectedTask)
-        if (index !== -1) {
-          ui.selectedColumn.tasks.splice(index, 1)
+        if (updatedBoard) {
+          const index = this.boards.findIndex((b) => b.id === updatedBoard.id)
+          if (index !== -1) {
+            this.boards[index] = updatedBoard
+          }
+          if (this.selectedBoard?.id === updatedBoard.id) {
+            this.selectedBoard = updatedBoard
+          }
+        } else if (ui.selectedColumn?.tasks) {
+          const taskIndex = ui.selectedColumn.tasks.indexOf(ui.selectedTask)
+          if (taskIndex !== -1) {
+            ui.selectedColumn.tasks.splice(taskIndex, 1)
+          }
         }
 
         ui.closeAllModals()

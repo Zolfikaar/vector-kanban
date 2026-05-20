@@ -13,6 +13,7 @@ export const columns = pgTable('columns', {
   title: text('title').notNull(),
   order: integer('order').notNull(),
   boardId: integer('board_id').references(() => boards.id, { onUpdate: 'cascade', onDelete: 'cascade' }),
+  userId: uuid('user_id'),
 });
 
 export const tasks = pgTable('tasks', {

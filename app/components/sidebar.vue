@@ -1,9 +1,11 @@
 <script setup>
 import Switch from './switch.vue'
 import { storeToRefs } from 'pinia'
+import { useAuthStore } from '~/stores/auth'
 import { useBoardStore } from '~/stores/board'
 import { useUiStore } from '~/stores/ui'
 
+const authStore = useAuthStore()
 const boardStore = useBoardStore()
 const uiStore = useUiStore()
 const { isSidebarHidden, isDarkTheme } = storeToRefs(uiStore)
@@ -23,6 +25,7 @@ function createBoard() {
 </script>
 <template>
   <section class="sidebar" :class="{ hidden: isSidebarHidden }">
+    <div class="sidebar-inner">
     <div class="content">
 
       <h3 class="all-boards">ALL BOARDS ({{ boardStore.boards.length }})</h3>
@@ -54,11 +57,15 @@ function createBoard() {
         <Icon name="icon-dark-theme" :size="20"
           :style="{ color: darkModeEnabled ? 'var(--primary)' : 'var(--text)' }" />
       </div>
-      <button class="toggle-sidebar" @click="hideSidebar">
+      <button type="button" class="logout-btn" @click="authStore.Logout()">
+        <p>Logout</p>
+      </button>
+      <button type="button" class="toggle-sidebar" @click="hideSidebar">
         <Icon name="icon-hide-sidebar" :size="20" />
         <p>Hide Sidebar</p>
       </button>
-      <p class="about">A product by UrLabs.</p>
+      <p class="about">A product by <a href="https://urlabs.io" target="_blank" rel="noopener noreferrer">UrLabs</a>.</p>
+    </div>
     </div>
   </section>
 </template>
@@ -70,9 +77,6 @@ function createBoard() {
   background-color: var(--card-topbar-sidebar);
   height: calc(100vh - 75px);
   border-right: 1px solid var(--bg);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
   overflow: hidden;
   transition: width 0.2s ease, flex-basis 0.2s ease;
 }
@@ -82,6 +86,26 @@ function createBoard() {
   flex-basis: 0;
   border-right: 0;
   pointer-events: none;
+}
+
+.sidebar-inner {
+  width: 300px;
+  min-width: 300px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sidebar.hidden .sidebar-inner {
+  opacity: 0;
+  transition: opacity 0.05s ease;
+}
+
+.sidebar.hidden .sidebar-inner * {
+  transition: none !important;
 }
 
 .content {
@@ -118,6 +142,15 @@ function createBoard() {
 
 .board-name {
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toggle-sidebar p,
+.logout-btn p,
+.all-boards {
+  white-space: nowrap;
 }
 
 .board-item svg {
@@ -198,6 +231,30 @@ html.dark .board-item:not(.active):hover {
   flex-shrink: 0;
 }
 
+.logout-btn {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  font-weight: bold;
+  max-width: 275px;
+  border-bottom-right-radius: 50px;
+  border-top-right-radius: 50px;
+  height: 48px;
+  padding-left: 45px;
+}
+
+.logout-btn:hover {
+  color: var(--primary);
+  cursor: pointer;
+  background-color: var(--primary-hover-bg);
+}
+
+.logout-btn p {
+  margin: 0;
+}
+
 .about {
   text-align: center;
   margin: 0 45px;
@@ -210,6 +267,11 @@ html.dark .board-item:not(.active):hover {
   .sidebar {
     width: 260px;
     flex-basis: 260px;
+  }
+
+  .sidebar-inner {
+    width: 260px;
+    min-width: 260px;
   }
 
   .all-boards {
@@ -228,6 +290,11 @@ html.dark .board-item:not(.active):hover {
   }
 
   .toggle-sidebar {
+    padding-left: 24px;
+    max-width: 236px;
+  }
+
+  .logout-btn {
     padding-left: 24px;
     max-width: 236px;
   }

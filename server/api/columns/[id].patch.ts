@@ -1,5 +1,5 @@
-import { boards, columns } from '~~/server/database/schema'
-import { eq, and } from 'drizzle-orm'
+import { columns } from '~~/server/database/schema'
+import { eq } from 'drizzle-orm'
 import { serverSupabaseUser } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
@@ -9,19 +9,30 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 401,
       statusMessage: 'Unauthorized',
-      message: 'You must be logged in to delete a column.',
+      message: 'You must be logged in to update a column.',
     })
   }
 
   const userId = user.sub
   const columnId = Number(getRouterParam(event, 'id'))
-  const db = useDb()
 
   if (!columnId || Number.isNaN(columnId)) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Bad Request',
       message: 'A valid column id is required.',
+    })
+  }
+
+  const body = await readBody(event)
+  const db = useDb()
+
+  const title = body.title?.trim()
+  if (!title) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Bad Request',
+      message: 'Column title is required.',
     })
   }
 
@@ -45,29 +56,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const boardId = existingColumn.boardId
-
   try {
-    await db.delete(columns).where(eq(columns.id, columnId))
+    await db.update(columns).set({ title }).where(eq(columns.id, columnId))
 
-    const board = boardId
-      ? await db.query.boards.findFirst({
-          where: and(eq(boards.id, boardId), eq(boards.userId, userId)),
-          with: {
-            columns: {
-              orderBy: (columns, { asc }) => [asc(columns.order)],
-              with: {
-                tasks: {
-                  orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],
-                  with: { subtasks: true },
-                },
-              },
-            },
-          },
-        })
-      : null
+    const updatedColumn = await db.query.columns.findFirst({
+      where: eq(columns.id, columnId),
+    })
 
-    return board
+    return updatedColumn
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'statusCode' in error) {
       const err = error as { statusCode?: number }
@@ -75,8 +71,8 @@ export default defineEventHandler(async (event) => {
         throw error
       }
     }
-    const message = error instanceof Error ? error.message : 'Failed to delete column'
-    console.error(`DELETE /api/columns/${columnId} Error:`, error)
+    const message = error instanceof Error ? error.message : 'Failed to update column'
+    console.error(`PATCH /api/columns/${columnId} Error:`, error)
     throw createError({
       statusCode: 500,
       statusMessage: 'Internal Server Error',
