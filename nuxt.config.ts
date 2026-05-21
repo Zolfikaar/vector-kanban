@@ -44,8 +44,6 @@ export default defineNuxtConfig({
     databaseUrl: process.env.DATABASE_URL
   },
   nitro: {
-    preset: 'node-server',
-
     output: {
       dir: 'dist',
       serverDir: 'dist/server',
