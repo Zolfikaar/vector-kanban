@@ -26,20 +26,23 @@ function createBoard() {
 <template>
   <section class="sidebar" :class="{ hidden: isSidebarHidden }">
     <div class="sidebar-inner">
-    <div class="content">
-
-      <h3 class="all-boards">ALL BOARDS ({{ boardStore.boards.length }})</h3>
-      <div class="boards-name" v-if="boardStore.boards && boardStore.boards.length > 0">
-
-        <div v-for="board in boardStore.boards" :key="board.id">
-
-          <h3 class="board-item " :class="{ active: boardStore.selectedBoard?.title === board.title }"
-            @click="boardStore.selectBoard(board)">
-            <Icon name="icon-board" :size="20" />
-            <p class="board-name" v-if="board && board.title">{{ board.title }}</p>
-          </h3>
+      <div class="content">
+        <h3 class="all-boards">ALL BOARDS ({{ boardStore.boards.length }})</h3>
+        <div class="boards-list">
+          <div v-for="board in boardStore.boards" :key="board.id">
+            <h3
+              class="board-item"
+              :class="{ active: boardStore.selectedBoard?.title === board.title }"
+              @click="boardStore.selectBoard(board)"
+            >
+              <Icon name="icon-board" :size="20" />
+              <p v-if="board?.title" class="board-name">{{ board.title }}</p>
+            </h3>
+          </div>
         </div>
+      </div>
 
+      <div class="sidebar-footer">
         <div class="board-item create-board" @click="createBoard">
           <Icon name="icon-board" :size="20" />
           <h3 class="board-name">
@@ -47,25 +50,34 @@ function createBoard() {
             <p>Create New Board</p>
           </h3>
         </div>
+
+        <div class="controls">
+          <div class="theme-controls">
+            <Icon
+              name="icon-light-theme"
+              :size="20"
+              :style="{ color: !darkModeEnabled ? 'var(--primary)' : 'var(--text)' }"
+            />
+            <Switch v-model="darkModeEnabled" />
+            <Icon
+              name="icon-dark-theme"
+              :size="20"
+              :style="{ color: darkModeEnabled ? 'var(--primary)' : 'var(--text)' }"
+            />
+          </div>
+          <button type="button" class="logout-btn" @click="authStore.Logout()">
+            <p>Logout</p>
+          </button>
+          <button type="button" class="toggle-sidebar" @click="hideSidebar">
+            <Icon name="icon-hide-sidebar" :size="20" />
+            <p>Hide Sidebar</p>
+          </button>
+          <p class="about">
+            A product by
+            <a href="https://urlabs.io" target="_blank" rel="noopener noreferrer">UrLabs</a>.
+          </p>
+        </div>
       </div>
-    </div>
-    <div class="controls">
-      <div class="theme-controls">
-        <Icon name="icon-light-theme" :size="20"
-          :style="{ color: !darkModeEnabled ? 'var(--primary)' : 'var(--text)' }" />
-        <Switch v-model="darkModeEnabled" />
-        <Icon name="icon-dark-theme" :size="20"
-          :style="{ color: darkModeEnabled ? 'var(--primary)' : 'var(--text)' }" />
-      </div>
-      <button type="button" class="logout-btn" @click="authStore.Logout()">
-        <p>Logout</p>
-      </button>
-      <button type="button" class="toggle-sidebar" @click="hideSidebar">
-        <Icon name="icon-hide-sidebar" :size="20" />
-        <p>Hide Sidebar</p>
-      </button>
-      <p class="about">A product by <a href="https://urlabs.io" target="_blank" rel="noopener noreferrer">UrLabs</a>.</p>
-    </div>
     </div>
   </section>
 </template>
@@ -94,7 +106,6 @@ function createBoard() {
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -109,8 +120,15 @@ function createBoard() {
 }
 
 .content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+.sidebar-footer {
+  flex-shrink: 0;
 }
 
 .all-boards {
@@ -120,7 +138,7 @@ function createBoard() {
   margin: 20px 0 10px 45px;
 }
 
-.boards-name {
+.boards-list {
   display: flex;
   flex-direction: column;
   gap: 2px;

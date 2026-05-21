@@ -116,9 +116,15 @@ watch(isActiveMobileOverlay, (v) => {
           </button>
         </div>
 
-        <div class="action-btns" :class="{ inactive: isAddTaskDisabled }">
+        <div class="action-btns">
 
-          <button type="button" class="btn-primary" :disabled="isAddTaskDisabled" @click="openCreateTaskModal">
+          <button
+            type="button"
+            class="btn-primary"
+            :class="{ inactive: isAddTaskDisabled }"
+            :disabled="isAddTaskDisabled"
+            @click="openCreateTaskModal"
+          >
             <Icon name="icon-add-task-mobile" :size="15" />
             <span class="add-task-label">Add New Task</span>
           </button>

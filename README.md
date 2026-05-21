@@ -6,7 +6,7 @@
 
 A full-stack Kanban task management system developed under the **UrLabs** umbrella. Boards, columns, tasks, and subtasks persist in **Supabase PostgreSQL**, with drag-and-drop reordering backed by atomic server transactions and strict per-user data isolation.
 
-![Design preview](./preview.jpg)
+![Design preview](./preview.png)
 
 ---
 
