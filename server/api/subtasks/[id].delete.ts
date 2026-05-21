@@ -1,5 +1,5 @@
-import { subtasks } from '~~/server/database/schema'
-import { eq } from 'drizzle-orm'
+import { boards, columns, subtasks } from '~~/server/database/schema'
+import { and, eq } from 'drizzle-orm'
 import { serverSupabaseUser } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 401,
       statusMessage: 'Unauthorized',
-      message: 'You must be logged in.',
+      message: 'You must be logged in to delete a subtask.',
     })
   }
 
@@ -50,48 +50,29 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const body = await readBody(event)
-  const subtaskPatch: { title?: string; isCompleted?: boolean } = {}
-
-  if (body.title !== undefined) {
-    const title = body.title?.trim()
-    if (!title) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Bad Request',
-        message: 'Subtask title cannot be empty.',
-      })
-    }
-    subtaskPatch.title = title
-  }
-
-  if (body.isCompleted !== undefined) {
-    if (typeof body.isCompleted !== 'boolean') {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Bad Request',
-        message: 'isCompleted must be a boolean.',
-      })
-    }
-    subtaskPatch.isCompleted = body.isCompleted
-  }
-
-  if (Object.keys(subtaskPatch).length === 0) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Bad Request',
-      message: 'No fields to update.',
-    })
-  }
+  const boardId = existingSubtask.task.column.boardId
 
   try {
-    const [updatedSubtask] = await db
-      .update(subtasks)
-      .set(subtaskPatch)
-      .where(eq(subtasks.id, subtaskId))
-      .returning()
+    await db.delete(subtasks).where(eq(subtasks.id, subtaskId))
 
-    return updatedSubtask
+    const board = boardId
+      ? await db.query.boards.findFirst({
+          where: and(eq(boards.id, boardId), eq(boards.userId, userId)),
+          with: {
+            columns: {
+              orderBy: (columns, { asc }) => [asc(columns.order)],
+              with: {
+                tasks: {
+                  orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],
+                  with: { subtasks: true },
+                },
+              },
+            },
+          },
+        })
+      : null
+
+    return board
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'statusCode' in error) {
       const err = error as { statusCode?: number }
@@ -99,8 +80,8 @@ export default defineEventHandler(async (event) => {
         throw error
       }
     }
-    const message = error instanceof Error ? error.message : 'Failed to update subtask'
-    console.error(`PATCH /api/subtasks/${subtaskId} Error:`, error)
+    const message = error instanceof Error ? error.message : 'Failed to delete subtask'
+    console.error(`DELETE /api/subtasks/${subtaskId} Error:`, error)
     throw createError({
       statusCode: 500,
       statusMessage: 'Internal Server Error',

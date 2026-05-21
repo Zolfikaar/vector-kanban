@@ -17,15 +17,15 @@ const taskDraft = ref({
   description: '',
   order: null,
   columnId: null,
-  subtasks: ['']
+  subtasks: [{ id: undefined, title: '' }],
 })
 
 const hasEmptySubtask = computed(() =>
-  taskDraft.value.subtasks.some((subtask) => !subtask.trim())
+  taskDraft.value.subtasks.some((subtask) => !subtask.title.trim())
 )
 
 const isSubtaskInvalid = (subtask) =>
-  hasTriedSubmit.value && !subtask.trim()
+  hasTriedSubmit.value && !subtask.title.trim()
 
 watchEffect(() => {
   if (!selectedTask.value) return
@@ -36,8 +36,11 @@ watchEffect(() => {
     order: selectedTask.value.order ?? null,
     columnId: selectedTask.value.columnId ?? null,
     subtasks: selectedTask.value.subtasks?.length
-      ? selectedTask.value.subtasks.map((subtask) => subtask.title ?? '')
-      : ['']
+      ? selectedTask.value.subtasks.map((subtask) => ({
+          id: subtask.id,
+          title: subtask.title ?? '',
+        }))
+      : [{ title: '' }]
   }
 
   hasTriedSubmit.value = false
@@ -53,16 +56,17 @@ const trimDescription = () => {
 }
 
 const trimSubtask = (index) => {
-  taskDraft.value.subtasks[index] = taskDraft.value.subtasks[index].trim()
+  taskDraft.value.subtasks[index].title =
+    taskDraft.value.subtasks[index].title.trim()
 }
 
 const addNewSubtask = () => {
-  taskDraft.value.subtasks.push('')
+  taskDraft.value.subtasks.push({ title: '' })
 }
 
 const removeSubtask = (index) => {
   if (taskDraft.value.subtasks.length === 1) {
-    taskDraft.value.subtasks[0] = ''
+    taskDraft.value.subtasks[0] = { title: '' }
     return
   }
 
@@ -81,6 +85,12 @@ const submitEdit = async () => {
 
   taskDraft.value.subtasks.forEach((_, index) => trimSubtask(index))
 
+  const previousById = new Map(
+    (selectedTask.value.subtasks ?? [])
+      .filter((subtask) => subtask.id)
+      .map((subtask) => [subtask.id, subtask])
+  )
+
   const updatedTask = {
     ...selectedTask.value,
     title: taskDraft.value.title,
@@ -89,14 +99,13 @@ const submitEdit = async () => {
       taskDraft.value.columnId != null
         ? Number(taskDraft.value.columnId)
         : null,
-    subtasks: taskDraft.value.subtasks.map((subtaskTitle, index) => {
-      const previousSubtask = selectedTask.value.subtasks?.[index]
-      return {
-        id: previousSubtask?.id,
-        title: subtaskTitle,
-        isCompleted: previousSubtask?.isCompleted ?? false
-      }
-    })
+    subtasks: taskDraft.value.subtasks.map((subtask) => ({
+      id: subtask.id,
+      title: subtask.title,
+      isCompleted: subtask.id
+        ? (previousById.get(subtask.id)?.isCompleted ?? false)
+        : false,
+    })),
   }
 
   await boardStore.editTask(updatedTask)
@@ -144,7 +153,7 @@ const submitEdit = async () => {
             <div class="col-input-row">
               <div class="subtask-field">
                 <input
-                  v-model="taskDraft.subtasks[index]"
+                  v-model="taskDraft.subtasks[index].title"
                   type="text"
                   placeholder="e.g. Make coffee"
                   :class="{ error: isSubtaskInvalid(subtask) }"

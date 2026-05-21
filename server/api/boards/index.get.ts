@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
         orderBy: (columns, { asc }) => [asc(columns.order)],
         with: {
           tasks: {
-            orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],
+            orderBy: (tasks, { asc }) => [asc(tasks.order)],
             with: {
               subtasks: true,
             }

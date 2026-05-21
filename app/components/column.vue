@@ -22,8 +22,22 @@ watchEffect(() => {
   }
 })
 
-const onTaskDragEnd = async () => {
-  await boardStore.syncTaskStatusesWithColumns()
+const onTaskDragEnd = async (evt) => {
+  const fromId = evt?.from?.dataset?.columnId
+  const toId = evt?.to?.dataset?.columnId
+  const movedBetweenLists =
+    evt?.from && evt?.to && evt.from !== evt.to
+
+  if (movedBetweenLists && !fromId && !toId) {
+    await boardStore.reorderTasksAfterDrag()
+    return
+  }
+
+  const affectedColumnIds = new Set([Number(props.column.id)])
+  if (fromId) affectedColumnIds.add(Number(fromId))
+  if (toId) affectedColumnIds.add(Number(toId))
+
+  await boardStore.reorderTasksAfterDrag([...affectedColumnIds])
 }
 
 const showColumnMenu = ref(false)
@@ -169,6 +183,7 @@ const columnColor = computed(() => {
           ghost-class="ghost-card"
           group="tasks"
           item-key="title"
+          :data-column-id="column.id"
           @end="onTaskDragEnd"
         >
           <template #item="{ element }">

@@ -2,9 +2,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const session = useSupabaseSession()
   const user = useSupabaseUser()
 
-  let isAuthenticated = !!(session.value || user.value)
+  let isAuthenticated = !!(session.value?.access_token || user.value)
 
-  if (import.meta.client) {
+  if (import.meta.client && !isAuthenticated) {
     const supabase = useSupabaseClient()
     const { data } = await supabase.auth.getSession()
 
@@ -14,20 +14,17 @@ export default defineNuxtRouteMiddleware(async (to) => {
       if (!session.value) {
         session.value = data.session
       }
-      if (!user.value) {
-        const { data: claimsData } = await supabase.auth.getClaims()
-        user.value = claimsData?.claims ?? null
+      if (!user.value && data.session.user) {
+        user.value = data.session.user
       }
     }
   }
 
   if (!isAuthenticated && to.path !== '/login') {
-    return navigateTo('/login')
+    return navigateTo('/login', { replace: true })
   }
 
   if (isAuthenticated && to.path === '/login') {
-    return navigateTo('/')
+    return navigateTo('/', { replace: true })
   }
 })
-
-

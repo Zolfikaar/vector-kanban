@@ -28,31 +28,51 @@ export const useBoardStore = defineStore('board', {
       }
     },
 
-    async syncTaskStatusesWithColumns() {
+    buildTasksReorderPayload(columnIds = null) {
       const board = this.selectedBoard
-      if (!board?.columns) return
+      if (!board?.columns) return []
 
-      const updatePromises = []
+      const idSet =
+        columnIds != null ? new Set(columnIds.map((id) => Number(id))) : null
 
-      this.selectedBoard.columns.forEach((column) => {
-        if (Array.isArray(column.tasks)) {
-          column.tasks.forEach((task, index) => {
-            task.columnId = column.id
+      const payload = []
 
-            const promise = $fetch(`/api/tasks/${task.id}`, {
-              method: 'PATCH',
-              body: {
-                columnId: column.id,
-                order: index,
-              },
-            }).catch((err) =>
-              console.error(`Failed to update task ${task.id}:`, err)
-            )
+      for (const column of board.columns) {
+        if (idSet && !idSet.has(Number(column.id))) continue
+        if (!Array.isArray(column.tasks)) continue
 
-            updatePromises.push(promise)
+        column.tasks.forEach((task, index) => {
+          task.columnId = column.id
+          task.order = index
+          payload.push({
+            id: task.id,
+            order: index,
+            columnId: column.id,
           })
-        }
-      })
+        })
+      }
+
+      return payload
+    },
+
+    async reorderTasksAfterDrag(columnIds = null) {
+      const tasks = this.buildTasksReorderPayload(columnIds)
+      if (!tasks.length) return
+
+      try {
+        await $fetch('/api/tasks/reorder', {
+          method: 'POST',
+          body: { tasks },
+        })
+      } catch (error) {
+        console.error('Failed to reorder tasks:', error)
+        toast.error(
+          this.getErrorMessage(
+            error,
+            'Could not save task order. Please refresh and try again.'
+          )
+        )
+      }
     },
 
     selectBoard(board) {
@@ -66,6 +86,18 @@ export const useBoardStore = defineStore('board', {
         error?.message ||
         fallback
       )
+    },
+
+    applyUpdatedBoard(updatedBoard) {
+      if (!updatedBoard) return
+
+      const index = this.boards.findIndex((b) => b.id === updatedBoard.id)
+      if (index !== -1) {
+        this.boards[index] = updatedBoard
+      }
+      if (this.selectedBoard?.id === updatedBoard.id) {
+        this.selectedBoard = updatedBoard
+      }
     },
 
     async createBoard({ title, columns }) {
@@ -195,13 +227,7 @@ export const useBoardStore = defineStore('board', {
         })
 
         if (updatedBoard) {
-          const index = this.boards.findIndex((b) => b.id === updatedBoard.id)
-          if (index !== -1) {
-            this.boards[index] = updatedBoard
-          }
-          if (this.selectedBoard?.id === updatedBoard.id) {
-            this.selectedBoard = updatedBoard
-          }
+          this.applyUpdatedBoard(updatedBoard)
         } else if (this.selectedBoard?.columns) {
           const colIndex = this.selectedBoard.columns.findIndex(
             (col) => Number(col.id) === Number(columnId)
@@ -380,8 +406,69 @@ export const useBoardStore = defineStore('board', {
       ui.isSubmitting = true
 
       try {
-        const sourceColumn = ui.selectedColumn
-        const taskIndex = sourceColumn.tasks.indexOf(ui.selectedTask)
+        const taskId = ui.selectedTask.id
+        const previousSubtasks = ui.selectedTask.subtasks ?? []
+        const keptSubtaskIds = new Set(
+          updatedTask.subtasks?.filter((s) => s.id).map((s) => s.id) ?? []
+        )
+        const removedSubtaskIds = previousSubtasks
+          .filter((s) => s.id && !keptSubtaskIds.has(s.id))
+          .map((s) => s.id)
+
+        let lastBoard = null
+        for (const subtaskId of removedSubtaskIds) {
+          lastBoard = await $fetch(`/api/subtasks/${subtaskId}`, {
+            method: 'DELETE',
+          })
+        }
+        if (lastBoard) {
+          this.applyUpdatedBoard(lastBoard)
+        }
+
+        const previousById = new Map(
+          previousSubtasks.filter((s) => s.id).map((s) => [s.id, s])
+        )
+        const sanitizedSubtasks = updatedTask.subtasks.filter((subtask) =>
+          subtask.title?.trim()
+        )
+
+        for (const subtask of sanitizedSubtasks) {
+          if (!subtask.id) {
+            await $fetch('/api/subtasks', {
+              method: 'POST',
+              body: {
+                taskId,
+                title: subtask.title.trim(),
+              },
+            })
+            continue
+          }
+
+          const previous = previousById.get(subtask.id)
+          if (!previous) continue
+
+          const patchBody = {}
+          const trimmedTitle = subtask.title.trim()
+          if (previous.title?.trim() !== trimmedTitle) {
+            patchBody.title = trimmedTitle
+          }
+          if (previous.isCompleted !== subtask.isCompleted) {
+            patchBody.isCompleted = subtask.isCompleted ?? false
+          }
+
+          if (Object.keys(patchBody).length > 0) {
+            await $fetch(`/api/subtasks/${subtask.id}`, {
+              method: 'PATCH',
+              body: patchBody,
+            })
+          }
+        }
+
+        const sourceColumn =
+          this.selectedBoard?.columns?.find((col) =>
+            col.tasks?.some((task) => task.id === taskId)
+          ) ?? ui.selectedColumn
+        const taskIndex = sourceColumn?.tasks?.findIndex((t) => t.id === taskId) ?? -1
 
         const targetColumnId = Number(updatedTask.columnId)
         const targetColumn =
@@ -389,7 +476,7 @@ export const useBoardStore = defineStore('board', {
             (column) => Number(column.id) === targetColumnId
           ) || sourceColumn
 
-        await $fetch(`/api/tasks/${ui.selectedTask.id}`, {
+        const serverTask = await $fetch(`/api/tasks/${taskId}`, {
           method: 'PATCH',
           body: {
             title: updatedTask.title,
@@ -398,24 +485,23 @@ export const useBoardStore = defineStore('board', {
           },
         })
 
-        if (taskIndex === -1) return false
+        if (taskIndex === -1 || !sourceColumn) return false
 
         if (!Array.isArray(targetColumn.tasks)) {
           targetColumn.tasks = []
         }
 
+        const mergedTask = { ...serverTask, ...updatedTask, subtasks: serverTask.subtasks }
+
         if (Number(targetColumn.id) === Number(sourceColumn.id)) {
-          sourceColumn.tasks[taskIndex] = {
-            ...ui.selectedTask,
-            ...updatedTask,
-          }
+          sourceColumn.tasks[taskIndex] = mergedTask
         } else {
           sourceColumn.tasks.splice(taskIndex, 1)
-          targetColumn.tasks.push({ ...ui.selectedTask, ...updatedTask })
+          targetColumn.tasks.push(mergedTask)
           ui.selectedColumn = targetColumn
         }
 
-        ui.selectedTask = { ...ui.selectedTask, ...updatedTask }
+        ui.selectedTask = mergedTask
 
         ui.closeAllModals()
         toast.success('Task updated successfully')
@@ -446,13 +532,7 @@ export const useBoardStore = defineStore('board', {
         })
 
         if (updatedBoard) {
-          const index = this.boards.findIndex((b) => b.id === updatedBoard.id)
-          if (index !== -1) {
-            this.boards[index] = updatedBoard
-          }
-          if (this.selectedBoard?.id === updatedBoard.id) {
-            this.selectedBoard = updatedBoard
-          }
+          this.applyUpdatedBoard(updatedBoard)
         } else if (ui.selectedColumn?.tasks) {
           const taskIndex = ui.selectedColumn.tasks.indexOf(ui.selectedTask)
           if (taskIndex !== -1) {
