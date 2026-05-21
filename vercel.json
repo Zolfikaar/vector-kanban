@@ -1,11 +1,6 @@
 {
   "version": 2,
-  "framework": "nuxt",
+  "buildCommand": "npm run build",
   "outputDirectory": ".output",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/nuxt"
-    }
-  ]
+  "framework": null
 }
