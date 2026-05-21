@@ -1,9 +1,9 @@
 import { boards, columns } from '~~/server/database/schema'
 import { and, eq } from 'drizzle-orm'
-import { serverSupabaseUser } from '#supabase/server'
+import { resolveSessionUser } from '~~/server/utils/session'
 
 export default defineEventHandler(async (event) => {
-  const user = await serverSupabaseUser(event)
+  const user = await resolveSessionUser(event)
 
   if (!user || !user.sub) {
     throw createError({

@@ -25,7 +25,8 @@ export default defineNuxtConfig({
   css: ['~/assets/main.css'],
   modules: [
     '@pinia/nuxt',
-    '@nuxtjs/supabase'
+    '@nuxtjs/supabase',
+    '@nuxt/test-utils/module',
   ],
 
   supabase: {
@@ -43,6 +44,6 @@ export default defineNuxtConfig({
     databaseUrl: process.env.DATABASE_URL
   },
   nitro: {
-    preset: 'node-server'
-  }
+    preset: 'node-server',
+  },
 })

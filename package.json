@@ -7,7 +7,9 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@nuxtjs/supabase": "^2.0.8",
@@ -24,8 +26,11 @@
     "ws": "^8.20.1"
   },
   "devDependencies": {
+    "@nuxt/test-utils": "^4.0.3",
     "@types/node": "^25.7.0",
     "@types/ws": "^8.18.1",
-    "drizzle-kit": "^0.31.10"
+    "drizzle-kit": "^0.31.10",
+    "happy-dom": "^20.9.0",
+    "vitest": "^4.1.7"
   }
 }

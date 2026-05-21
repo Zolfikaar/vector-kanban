@@ -1,6 +1,6 @@
 import { columns, tasks } from '~~/server/database/schema'
 import { and, eq, inArray } from 'drizzle-orm'
-import { serverSupabaseUser } from '#supabase/server'
+import { resolveSessionUser } from '~~/server/utils/session'
 
 type ReorderTaskItem = {
   id: number
@@ -9,7 +9,7 @@ type ReorderTaskItem = {
 }
 
 export default defineEventHandler(async (event) => {
-  const user = await serverSupabaseUser(event)
+  const user = await resolveSessionUser(event)
 
   if (!user || !user.sub) {
     throw createError({
