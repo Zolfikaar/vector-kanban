@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "framework": "nuxt",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/nuxt"
+    }
+  ]
+}
