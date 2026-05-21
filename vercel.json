@@ -1,6 +1,7 @@
 {
   "version": 2,
   "framework": "nuxt",
+  "outputDirectory": ".output",
   "builds": [
     {
       "src": "package.json",
