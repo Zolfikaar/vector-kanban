@@ -41,14 +41,11 @@ export default defineNuxtConfig({
     shim: false
   },
   runtimeConfig: {
-    databaseUrl: process.env.DATABASE_URL
+    public: {
+      supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
+      supabaseKey: process.env.NUXT_PUBLIC_SUPABASE_KEY,
+    },
   },
-  nitro: {
-    output: {
-      dir: 'dist',
-      serverDir: 'dist/server',
-      publicDir: 'dist/public'
-    }
-  }
+
 
 })
