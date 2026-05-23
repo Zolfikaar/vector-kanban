@@ -1,6 +1,7 @@
-import { boards, columns } from '~~/server/database/schema'
-import { eq, and } from 'drizzle-orm'
+import { columns } from '~~/server/database/schema'
+import { eq } from 'drizzle-orm'
 import { serverSupabaseUser } from '#supabase/server'
+import { fetchBoardWithRelations } from '~~/server/utils/board'
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
@@ -51,20 +52,7 @@ export default defineEventHandler(async (event) => {
     await db.delete(columns).where(eq(columns.id, columnId))
 
     const board = boardId
-      ? await db.query.boards.findFirst({
-          where: and(eq(boards.id, boardId), eq(boards.userId, userId)),
-          with: {
-            columns: {
-              orderBy: (columns, { asc }) => [asc(columns.order)],
-              with: {
-                tasks: {
-                  orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],
-                  with: { subtasks: true },
-                },
-              },
-            },
-          },
-        })
+      ? await fetchBoardWithRelations(db, boardId, userId)
       : null
 
     return board

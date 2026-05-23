@@ -9,7 +9,9 @@ const { isSubmitting, selectedColumn } = storeToRefs(uiStore)
 
 const deleteColumn = async () => {
   if (isSubmitting.value || !selectedColumn.value?.id) return
-  await boardStore.deleteColumn(selectedColumn.value.id)
+  const boardId = boardStore.selectedBoard?.id
+  if (!boardId) return
+  await boardStore.deleteColumn(boardId, selectedColumn.value.id)
 }
 </script>
 

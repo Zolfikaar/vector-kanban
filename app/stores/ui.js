@@ -6,6 +6,7 @@ export const MODAL_NAMES = {
   DELETE_BOARD: 'deleteBoard',
   EDIT_BOARD: 'editBoard',
   CREATE_COLUMN: 'createColumn',
+  EDIT_COLUMN: 'editColumn',
   EDIT_TASK: 'editTask',
   DELETE_TASK: 'deleteTask',
   CREATE_TASK: 'createTask',
@@ -47,6 +48,8 @@ export const useUiStore = defineStore('ui', {
       state.activeModalName === MODAL_NAMES.EDIT_BOARD,
     isCreateColumnModalOpen: (state) =>
       state.activeModalName === MODAL_NAMES.CREATE_COLUMN,
+    isEditColumnModalOpen: (state) =>
+      state.activeModalName === MODAL_NAMES.EDIT_COLUMN,
     isEditTaskModalOpen: (state) =>
       state.activeModalName === MODAL_NAMES.EDIT_TASK,
     isDeleteTaskModalOpen: (state) =>

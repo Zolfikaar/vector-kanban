@@ -2,9 +2,13 @@
 
 **Enterprise Grade Production Kanban Board built with Nuxt 4, Postgres, and Supabase.**
 
-[View Project Roadmap](./PROJECT_ROADMAP.md) · [View Detailed Progress Tracking](./PROJECT_PROGRESS.md)
+**Live Demo:** 👉 [https://vector-kanban.netlify.app/](https://vector-kanban.netlify.app/)
+
+[View Project Roadmap](./PROJECT_ROADMAP.md) · **[Future Board Roadmap](./ROADMAP.md)** · [View Detailed Progress Tracking](./PROJECT_PROGRESS.md)
 
 A full-stack Kanban task management system developed under the **UrLabs** umbrella. Boards, columns, tasks, and subtasks persist in **Supabase PostgreSQL**, with drag-and-drop reordering backed by atomic server transactions and strict per-user data isolation.
+
+Board and column lifecycles are **strictly decoupled**: board edits are **title-only**, while every column mutation (add, edit title, delete) flows through dedicated UI modals, Pinia actions, and isolated `/api/columns` endpoints—keeping state predictable and IDs in sync with the database.
 
 ![Design preview](./preview.png)
 
@@ -14,6 +18,17 @@ A full-stack Kanban task management system developed under the **UrLabs** umbrel
 
 Vector Kanban follows **Nuxt 4** full-stack boundaries: a universal Vue application layer, a **Nitro 4** server engine, and a **Supabase**-hosted data plane with server-validated sessions.
 
+### Board & Column Decoupling
+
+Responsibilities are split by design so each layer has a single purpose:
+
+| Layer | Scope | How it works |
+|-------|--------|----------------|
+| **Board** | Title only | Topbar **Edit Board** modal → `editBoard()` → `PATCH /api/boards/:id` with `{ title }` only. The API returns **400 Bad Request** if a `columns` payload is included. |
+| **Columns** | Add / edit / delete | **Create Column** modal, per-column **Edit Column** / **Delete Column** modals → `addColumn`, `updateColumn`, `deleteColumn` → `POST`, `PATCH`, or `DELETE` on `/api/columns`. Responses return the full board graph so Pinia can merge official database UUIDs after optimistic client IDs. |
+
+Column management was **removed entirely** from the board edit flow. Creating a board (`POST /api/boards`) may still seed initial columns at setup time; ongoing column changes never go through the board PATCH handler.
+
 ### Frontend & App Layer
 
 | Concern | Implementation |
@@ -22,6 +37,7 @@ Vector Kanban follows **Nuxt 4** full-stack boundaries: a universal Vue applicat
 | UI framework | Vue 3 Composition API (`<script setup>`) |
 | Styling | Tailwind CSS utility patterns + design tokens (`app/assets/main.css`) |
 | Client state | Pinia stores (`board`, `ui`, `auth`) synced with `$fetch` API responses |
+| Board vs. column modals | `edit-board` (title), `edit-column`, `create-column`, `delete-column` (isolated column flows) |
 | Drag & drop | `vuedraggable` with optimistic Pinia updates + batch persist on drop |
 | Auth UX | Global middleware (`app/middleware/auth.global.ts`), Supabase session hydration |
 
@@ -33,6 +49,7 @@ Vector Kanban follows **Nuxt 4** full-stack boundaries: a universal Vue applicat
 | ORM | **Drizzle ORM** — typed schema, relations, and transactional writes |
 | Session resolution | `resolveSessionUser()` — `serverSupabaseUser` in production; `x-test-user-sub` when `NUXT_TEST=true` |
 | API style | RESTful Nitro event handlers with consistent `401` / `403` / `400` error contracts |
+| Board PATCH contract | Title-only updates; column writes rejected at `PATCH /api/boards/:id` |
 
 ### Database & Security
 
@@ -91,6 +108,8 @@ npm run test
 ## Features
 
 - **Full CRUD** — Boards, columns, tasks, and subtasks via Nitro API routes
+- **Decoupled board & column flows** — Edit board title from the topbar; manage columns only via dedicated column modals and `/api/columns`
+- **Optimistic column sync** — Client UUIDs on add are replaced when the API returns the authoritative board graph
 - **Form validation** — Required fields; empty subtask rows must be filled or removed
 - **Loading states** — `AppSpinner` on async actions; toasts via `vue-sonner`
 - **Drag and drop** — Reorder within columns and move across columns with atomic persist
@@ -112,6 +131,7 @@ npm run test
 | Database | PostgreSQL ([Supabase](https://supabase.com/)) |
 | Auth | [@nuxtjs/supabase](https://supabase.nuxtjs.org/) |
 | Testing | Vitest, @nuxt/test-utils, happy-dom |
+| Deployment | [Netlify](https://vector-kanban.netlify.app/) |
 
 ---
 
@@ -165,17 +185,18 @@ npm run preview
 ```
 app/
   components/       # UI, modals, kanban columns/tasks
+    modals/         # edit-board (title), edit-column, create-column, delete-column, …
   stores/           # Pinia (board, ui, auth)
   middleware/       # Global auth guard
   pages/            # Routes (home, login, settings)
 server/
   api/              # Nitro REST handlers
-    boards/         # Board CRUD
-    columns/        # Column CRUD
+    boards/         # Board CRUD (PATCH: title only)
+    columns/        # Dedicated column CRUD
     tasks/          # Task CRUD + reorder
     subtasks/       # Subtask CRUD
   database/         # Drizzle schema & relations
-  utils/            # db, session, auth helpers
+  utils/            # db, session, auth, board fetch helpers
 tests/
   server/           # API integration specs
   helpers/          # Shared @nuxt/test-utils setup
@@ -185,21 +206,38 @@ tests/
 
 ## API Endpoints
 
+### Boards
+
 | Method | Route | Description |
 |--------|-------|-------------|
 | `GET` | `/api/boards` | List boards with nested columns, tasks, subtasks (user-scoped) |
-| `POST` | `/api/boards` | Create board and initial columns |
-| `PATCH` | `/api/boards/:id` | Update board; manage columns |
+| `POST` | `/api/boards` | Create board and initial columns (setup only) |
+| `PATCH` | `/api/boards/:id` | **Title only.** Body: `{ title }`. Returns full board. **`400`** if `columns` is sent—use column endpoints instead. |
 | `DELETE` | `/api/boards/:id` | Delete board (cascades) |
-| `POST` | `/api/columns` | Create column on owned board |
-| `PATCH` | `/api/columns/:id` | Update column |
-| `DELETE` | `/api/columns/:id` | Delete column and tasks |
+
+### Columns (dedicated mutations)
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| `POST` | `/api/columns` | Create column on owned board; returns full board for store sync |
+| `PATCH` | `/api/columns/:id` | Update column title; returns full board |
+| `DELETE` | `/api/columns/:id` | Delete column and its tasks; returns full board |
+
+### Tasks
+
+| Method | Route | Description |
+|--------|-------|-------------|
 | `GET` | `/api/tasks` | List tasks |
 | `GET` | `/api/tasks/:id` | Get single task |
 | `POST` | `/api/tasks` | Create task with optional subtasks |
 | `PATCH` | `/api/tasks/:id` | Update task / move column |
 | `DELETE` | `/api/tasks/:id` | Delete task (cascades subtasks) |
 | `POST` | `/api/tasks/reorder` | **Atomic batch reorder** (transaction) |
+
+### Subtasks
+
+| Method | Route | Description |
+|--------|-------|-------------|
 | `POST` | `/api/subtasks` | Create subtask |
 | `PATCH` | `/api/subtasks/:id` | Update subtask title / completion |
 | `DELETE` | `/api/subtasks/:id` | Delete subtask |
@@ -220,8 +258,13 @@ tests/
 
 ## Documentation & Roadmap
 
-- **[PROJECT_ROADMAP.md](./PROJECT_ROADMAP.md)** — Phased delivery status and future product vision
-- **[PROJECT_PROGRESS.md](./PROJECT_PROGRESS.md)** — Granular checklist of completed work
+| Document | Purpose |
+|----------|---------|
+| **[ROADMAP.md](./ROADMAP.md)** | **Future board features** — metadata & timestamps, collaboration & roles, custom themes/backgrounds, activity & audit logs |
+| [PROJECT_ROADMAP.md](./PROJECT_ROADMAP.md) | Phased delivery status (Phases 1–8) and platform-wide vision |
+| [PROJECT_PROGRESS.md](./PROJECT_PROGRESS.md) | Granular checklist of completed work |
+
+The decoupled board/column architecture in this README is the baseline for the enhancements tracked in **[ROADMAP.md](./ROADMAP.md)**.
 
 ---
 

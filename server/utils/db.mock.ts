@@ -4,6 +4,16 @@ const mockBoard = {
   id: 1,
   title: 'Test Board',
   userId: TEST_USER_ID,
+  columns: [
+    {
+      id: 1,
+      title: 'QA Testing Column',
+      order: 0,
+      boardId: 1,
+      userId: TEST_USER_ID,
+      tasks: [],
+    },
+  ],
 }
 
 function createMockDb() {

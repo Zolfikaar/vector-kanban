@@ -100,6 +100,70 @@ export const useBoardStore = defineStore('board', {
       }
     },
 
+    findBoard(boardId) {
+      if (this.selectedBoard?.id === boardId) {
+        return this.selectedBoard
+      }
+      return this.boards.find((b) => b.id === boardId) ?? null
+    },
+
+    removeOptimisticColumn(boardId, clientId) {
+      const board = this.findBoard(boardId)
+      if (!board?.columns) return
+
+      const index = board.columns.findIndex((col) => col.id === clientId)
+      if (index !== -1) {
+        board.columns.splice(index, 1)
+      }
+    },
+
+    pushOptimisticColumn(boardId, columnTitle) {
+      const title = columnTitle?.trim()
+      if (!title || boardId == null) return null
+
+      const board = this.findBoard(boardId)
+      if (!board) return null
+
+      const clientId = crypto.randomUUID()
+      const optimisticColumn = { id: clientId, title, tasks: [] }
+
+      if (!Array.isArray(board.columns)) {
+        board.columns = []
+      }
+      board.columns.push(optimisticColumn)
+
+      return clientId
+    },
+
+    updateColumnLocally(boardId, columnId, updatedData) {
+      const board = this.findBoard(boardId)
+      if (!board?.columns) return false
+
+      const column = board.columns.find(
+        (col) => String(col.id) === String(columnId)
+      )
+      if (!column) return false
+
+      if (updatedData.title != null) {
+        column.title = updatedData.title.trim()
+      }
+
+      return true
+    },
+
+    deleteColumnLocally(boardId, columnId) {
+      const board = this.findBoard(boardId)
+      if (!board?.columns) return false
+
+      const index = board.columns.findIndex(
+        (col) => String(col.id) === String(columnId)
+      )
+      if (index === -1) return false
+
+      board.columns.splice(index, 1)
+      return true
+    },
+
     async createBoard({ title, columns }) {
       const ui = useUiStore()
       ui.isSubmitting = true
@@ -169,10 +233,13 @@ export const useBoardStore = defineStore('board', {
     },
 
     async editBoard(
-      { title, columns },
+      { title },
       { successMessage = 'Board updated successfully' } = {}
     ) {
       if (!this.selectedBoard?.id) return false
+
+      const trimmedTitle = title?.trim()
+      if (!trimmedTitle) return false
 
       const ui = useUiStore()
       ui.isSubmitting = true
@@ -182,24 +249,11 @@ export const useBoardStore = defineStore('board', {
           `/api/boards/${this.selectedBoard.id}`,
           {
             method: 'PATCH',
-            body: {
-              title: title.trim(),
-              columns: columns.map((column) => ({
-                id: column.id ?? undefined,
-                title: column.title.trim(),
-              })),
-            },
+            body: { title: trimmedTitle },
           }
         )
 
-        const index = this.boards.findIndex(
-          (b) => b.id === this.selectedBoard.id
-        )
-        if (index !== -1) {
-          this.boards[index] = updatedBoard
-        }
-
-        this.selectedBoard = updatedBoard
+        this.applyUpdatedBoard(updatedBoard)
         ui.closeAllModals()
         toast.success(successMessage)
         return true
@@ -215,26 +269,106 @@ export const useBoardStore = defineStore('board', {
       }
     },
 
-    async deleteColumn(columnId) {
+    async addColumn(boardId, columnTitle, { closeModal = true } = {}) {
+      const title = columnTitle?.trim()
+      if (!title || boardId == null) return false
+
+      const clientId = this.pushOptimisticColumn(boardId, title)
+      if (!clientId) return false
+
+      const board = this.findBoard(boardId)
+      const order = (board?.columns?.length ?? 1) - 1
+
+      try {
+        const updatedBoard = await $fetch('/api/columns', {
+          method: 'POST',
+          body: {
+            title,
+            boardId,
+            order,
+          },
+        })
+
+        if (updatedBoard?.columns) {
+          this.applyUpdatedBoard(updatedBoard)
+        } else {
+          this.removeOptimisticColumn(boardId, clientId)
+        }
+
+        if (closeModal) {
+          useUiStore().closeAllModals()
+        }
+        return true
+      } catch (error) {
+        this.removeOptimisticColumn(boardId, clientId)
+        console.error('Error adding column:', error)
+        toast.error(
+          this.getErrorMessage(error, 'Could not add column. Please try again.')
+        )
+        return false
+      }
+    },
+
+    async updateColumn(boardId, columnId, updatedData) {
+      const title = updatedData?.title?.trim()
+      if (!title || boardId == null || columnId == null) return false
+
+      const numericColumnId = Number(columnId)
+      if (Number.isNaN(numericColumnId)) return false
+
       const ui = useUiStore()
-      if (!this.selectedBoard?.id || columnId == null) return false
+      const previousTitle = this.findBoard(boardId)?.columns?.find(
+        (col) => Number(col.id) === numericColumnId
+      )?.title
+
+      this.updateColumnLocally(boardId, columnId, { title })
+      ui.isSubmitting = true
+
+      try {
+        const updatedBoard = await $fetch(`/api/columns/${numericColumnId}`, {
+          method: 'PATCH',
+          body: { title },
+        })
+
+        if (updatedBoard?.columns) {
+          this.applyUpdatedBoard(updatedBoard)
+        }
+
+        ui.closeAllModals()
+        toast.success('Column updated successfully')
+        return true
+      } catch (error) {
+        if (previousTitle != null) {
+          this.updateColumnLocally(boardId, columnId, { title: previousTitle })
+        }
+        console.error('Error updating column:', error)
+        toast.error(
+          this.getErrorMessage(error, 'Could not update column. Please try again.')
+        )
+        return false
+      } finally {
+        ui.isSubmitting = false
+      }
+    },
+
+    async deleteColumn(boardId, columnId) {
+      const ui = useUiStore()
+      if (boardId == null || columnId == null) return false
+
+      const numericColumnId = Number(columnId)
+      if (Number.isNaN(numericColumnId)) return false
 
       ui.isSubmitting = true
 
       try {
-        const updatedBoard = await $fetch(`/api/columns/${columnId}`, {
+        const updatedBoard = await $fetch(`/api/columns/${numericColumnId}`, {
           method: 'DELETE',
         })
 
-        if (updatedBoard) {
+        if (updatedBoard?.columns) {
           this.applyUpdatedBoard(updatedBoard)
-        } else if (this.selectedBoard?.columns) {
-          const colIndex = this.selectedBoard.columns.findIndex(
-            (col) => Number(col.id) === Number(columnId)
-          )
-          if (colIndex !== -1) {
-            this.selectedBoard.columns.splice(colIndex, 1)
-          }
+        } else {
+          this.deleteColumnLocally(boardId, columnId)
         }
 
         ui.closeAllModals()
@@ -266,44 +400,24 @@ export const useBoardStore = defineStore('board', {
       ui.isSubmitting = true
 
       try {
-        const baseOrder = (this.selectedBoard.columns || []).length
-        const created = await Promise.all(
-          sanitized.map((column, index) =>
-            $fetch('/api/columns', {
-              method: 'POST',
-              body: {
-                title: column.title,
-                boardId: this.selectedBoard.id,
-                order: baseOrder + index,
-              },
-            })
-          )
-        )
+        let lastSuccess = false
 
-        if (!this.selectedBoard.columns) {
-          this.selectedBoard.columns = []
-        }
-        this.selectedBoard.columns.push(...created)
-
-        const boardIndex = this.boards.findIndex(
-          (b) => b.id === this.selectedBoard.id
-        )
-        if (boardIndex !== -1) {
-          if (!this.boards[boardIndex].columns) {
-            this.boards[boardIndex].columns = []
+        for (const column of sanitized) {
+          const success = await this.addColumn(this.selectedBoard.id, column.title, {
+            closeModal: false,
+          })
+          if (!success) {
+            return false
           }
-          this.boards[boardIndex].columns.push(...created)
+          lastSuccess = true
         }
 
-        ui.closeAllModals()
-        toast.success('Column(s) added successfully')
-        return true
-      } catch (error) {
-        console.error('Error adding column(s):', error)
-        toast.error(
-          this.getErrorMessage(error, 'Could not add column(s). Please try again.')
-        )
-        return false
+        if (lastSuccess) {
+          ui.closeAllModals()
+          toast.success('Column(s) added successfully')
+        }
+
+        return lastSuccess
       } finally {
         ui.isSubmitting = false
       }

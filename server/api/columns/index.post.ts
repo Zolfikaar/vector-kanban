@@ -1,6 +1,7 @@
 import { boards, columns } from '~~/server/database/schema'
 import { and, eq } from 'drizzle-orm'
 import { resolveSessionUser } from '~~/server/utils/session'
+import { fetchBoardWithRelations } from '~~/server/utils/board'
 
 export default defineEventHandler(async (event) => {
   const user = await resolveSessionUser(event)
@@ -58,14 +59,16 @@ export default defineEventHandler(async (event) => {
       : existingColumns.length
 
   try {
-    const [newColumn] = await db.insert(columns).values({
+    await db.insert(columns).values({
       title,
       order,
       boardId,
       userId,
-    }).returning()
+    })
 
-    return newColumn
+    const updatedBoard = await fetchBoardWithRelations(db, boardId, userId)
+
+    return updatedBoard
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to create column'
     console.error('POST /api/columns Error:', error)

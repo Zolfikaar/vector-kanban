@@ -52,7 +52,8 @@ function closeColumnMenu() {
 }
 
 function editColumn() {
-  uiStore.openModal(MODAL_NAMES.EDIT_BOARD)
+  uiStore.selectedColumn = props.column
+  uiStore.openModal(MODAL_NAMES.EDIT_COLUMN)
   closeColumnMenu()
 }
 
@@ -182,7 +183,7 @@ const columnColor = computed(() => {
           class="draggable-list"
           ghost-class="ghost-card"
           group="tasks"
-          item-key="title"
+          item-key="id"
           :data-column-id="column.id"
           @end="onTaskDragEnd"
         >

@@ -1,6 +1,7 @@
 import { columns } from '~~/server/database/schema'
 import { eq } from 'drizzle-orm'
 import { serverSupabaseUser } from '#supabase/server'
+import { fetchBoardWithRelations } from '~~/server/utils/board'
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
@@ -59,11 +60,13 @@ export default defineEventHandler(async (event) => {
   try {
     await db.update(columns).set({ title }).where(eq(columns.id, columnId))
 
-    const updatedColumn = await db.query.columns.findFirst({
-      where: eq(columns.id, columnId),
-    })
+    const board = await fetchBoardWithRelations(
+      db,
+      existingColumn.boardId,
+      userId
+    )
 
-    return updatedColumn
+    return board
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'statusCode' in error) {
       const err = error as { statusCode?: number }

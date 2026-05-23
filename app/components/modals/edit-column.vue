@@ -1,50 +1,50 @@
 <script setup>
-import { ref, computed, watchEffect } from 'vue'
+import { ref, watchEffect } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useBoardStore } from '~/stores/board'
 import { useUiStore } from '~/stores/ui'
 
 const boardStore = useBoardStore()
 const uiStore = useUiStore()
-const { isSubmitting } = storeToRefs(uiStore)
+const { isSubmitting, selectedColumn } = storeToRefs(uiStore)
 
 const hasTriedSubmit = ref(false)
-const boardTitle = ref('')
-
-const selectedBoard = computed(() => boardStore.selectedBoard)
+const columnTitle = ref('')
 
 watchEffect(() => {
-  if (!selectedBoard.value) return
+  if (!selectedColumn.value) return
 
-  boardTitle.value = selectedBoard.value.title ?? ''
+  columnTitle.value = selectedColumn.value.title ?? ''
   hasTriedSubmit.value = false
 })
 
-const trimBoardTitle = () => {
-  boardTitle.value = boardTitle.value.trim()
+const trimTitle = () => {
+  columnTitle.value = columnTitle.value.trim()
 }
 
-const isBoardTitleEmpty = computed(() => !boardTitle.value.trim())
-const isBoardTitleInvalid = computed(
-  () => hasTriedSubmit.value && isBoardTitleEmpty.value
-)
+const isTitleInvalid = () => hasTriedSubmit.value && !columnTitle.value.trim()
 
-const submitUpdateBoard = async () => {
-  if (isSubmitting.value) return
+const submitUpdateColumn = async () => {
+  if (isSubmitting.value || !selectedColumn.value?.id) return
 
   hasTriedSubmit.value = true
-  trimBoardTitle()
+  trimTitle()
 
-  if (isBoardTitleEmpty.value) return
+  if (!columnTitle.value) return
 
-  await boardStore.editBoard({ title: boardTitle.value })
+  const boardId = boardStore.selectedBoard?.id
+  if (!boardId) return
+
+  await boardStore.updateColumn(boardId, selectedColumn.value.id, {
+    title: columnTitle.value,
+  })
 }
 </script>
 
 <template>
   <div class="modal-global">
     <div class="header">
-      <h1>Edit Board</h1>
+      <h1>Edit Column</h1>
 
       <button type="button" class="close-btn" @click="uiStore.closeAllModals()">
         <Icon name="icon-cross" :size="18" />
@@ -52,16 +52,17 @@ const submitUpdateBoard = async () => {
     </div>
 
     <div class="fields">
-      <div class="board-name">
+      <div class="column-name">
         <div class="field-label-row">
           <label class="medium">Name</label>
-          <span v-if="isBoardTitleInvalid" class="field-error">Can't be empty</span>
+          <span v-if="isTitleInvalid()" class="field-error">Can't be empty</span>
         </div>
         <input
-          v-model="boardTitle"
+          v-model="columnTitle"
           type="text"
-          :class="{ error: isBoardTitleInvalid }"
-          @blur="trimBoardTitle"
+          placeholder="e.g. Todo"
+          :class="{ error: isTitleInvalid() }"
+          @blur="trimTitle"
         >
       </div>
     </div>
@@ -71,9 +72,9 @@ const submitUpdateBoard = async () => {
         type="button"
         class="btn-primary update-btn"
         :disabled="isSubmitting"
-        @click="submitUpdateBoard"
+        @click="submitUpdateColumn"
       >
-        <AppSpinner v-if="isSubmitting" :size="18" label="Updating board" />
+        <AppSpinner v-if="isSubmitting" :size="18" label="Updating column" />
         <span>{{ isSubmitting ? 'Saving…' : 'Save Changes' }}</span>
       </button>
     </div>
@@ -102,28 +103,12 @@ const submitUpdateBoard = async () => {
   color: var(--danger);
 }
 
-.fields .board-name {
+.column-name {
   margin-bottom: 20px;
 }
 
-.fields .board-name label {
+.column-name label {
   color: var(--muted);
-  display: inline-block;
-  margin-bottom: 5px;
-}
-
-.fields .board-name input {
-  width: 100%;
-  height: 40px;
-  border: 1px solid var(--input-border);
-  border-radius: 5px;
-  padding-left: 10px;
-  background: var(--card-topbar-sidebar);
-  color: var(--text);
-}
-
-.fields .board-name input:focus {
-  outline-color: unset;
 }
 
 .field-label-row {
@@ -139,22 +124,25 @@ const submitUpdateBoard = async () => {
   font-size: 12px;
 }
 
-.fields .board-name input.error {
+.column-name input {
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--input-border);
+  border-radius: 5px;
+  padding-left: 10px;
+  background: var(--card-topbar-sidebar);
+  color: var(--text);
+}
+
+.column-name input.error {
   border-color: var(--danger);
 }
 
-.btns button {
+.btns .update-btn {
   width: 100%;
   height: 40px;
   border-radius: 50px;
   border: none;
-}
-
-.btns button:hover {
-  cursor: pointer;
-}
-
-.btns .update-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;

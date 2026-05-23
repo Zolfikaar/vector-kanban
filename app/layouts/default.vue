@@ -50,6 +50,7 @@ onMounted(async () => {
   <DeleteBoard v-if="uiStore.isDeleteBoardModalOpen" />
   <EditBoard v-if="uiStore.isEditBoardModalOpen" />
   <CreateColumn v-if="uiStore.isCreateColumnModalOpen" />
+  <EditColumn v-if="uiStore.isEditColumnModalOpen" />
   <ViewTask v-if="uiStore.isViewTaskModalOpen" />
   <EditTask v-if="uiStore.isEditTaskModalOpen" />
   <DeleteTask v-if="uiStore.isDeleteTaskModalOpen" />

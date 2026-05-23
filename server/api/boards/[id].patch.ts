@@ -1,6 +1,7 @@
-import { boards, columns } from '~~/server/database/schema'
-import { and, eq, inArray } from 'drizzle-orm'
+import { boards } from '~~/server/database/schema'
+import { eq } from 'drizzle-orm'
 import { serverSupabaseUser } from '#supabase/server'
+import { fetchBoardWithRelations } from '~~/server/utils/board'
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
@@ -23,6 +24,15 @@ export default defineEventHandler(async (event) => {
       statusCode: 400,
       statusMessage: 'Bad Request',
       message: 'A valid board id is required.',
+    })
+  }
+
+  if (body?.columns != null) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Bad Request',
+      message:
+        'Column changes are not supported on board update. Use the column API endpoints instead.',
     })
   }
 
@@ -55,80 +65,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const incomingColumns: Array<{ id?: number; title?: string }> =
-    body.columns || []
-
-  for (const col of incomingColumns) {
-    if (!col.title?.trim()) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Bad Request',
-        message: 'Column title cannot be empty.',
-      })
-    }
-  }
-
   try {
     await db.update(boards).set({ title }).where(eq(boards.id, boardId))
 
-    const existingColumns = await db
-      .select()
-      .from(columns)
-      .where(eq(columns.boardId, boardId))
-
-    const existingIds = new Set(existingColumns.map((col) => col.id))
-    const keepIds: number[] = []
-
-    for (let index = 0; index < incomingColumns.length; index++) {
-      const col = incomingColumns[index]
-      const colTitle = col.title!.trim()
-      const colId = col.id != null ? Number(col.id) : null
-
-      if (colId && existingIds.has(colId)) {
-        keepIds.push(colId)
-        await db
-          .update(columns)
-          .set({ title: colTitle, order: index })
-          .where(
-            and(
-              eq(columns.id, colId),
-              eq(columns.boardId, boardId),
-              eq(columns.userId, userId)
-            )
-          )
-      } else {
-        await db.insert(columns).values({
-          title: colTitle,
-          order: index,
-          boardId,
-          userId,
-        })
-      }
-    }
-
-    const deleteIds = [...existingIds].filter((id) => !keepIds.includes(id))
-    if (deleteIds.length > 0) {
-      await db
-        .delete(columns)
-        .where(
-          and(eq(columns.boardId, boardId), inArray(columns.id, deleteIds))
-        )
-    }
-
-    const board = await db.query.boards.findFirst({
-      where: and(eq(boards.id, boardId), eq(boards.userId, userId)),
-      with: {
-        columns: {
-          orderBy: (columns, { asc }) => [asc(columns.order)],
-          with: {
-            tasks: {
-              orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],
-              with: { subtasks: true },
-            },
-          },
-        },
-      },
-    })
+    const board = await fetchBoardWithRelations(db, boardId, userId)
 
     return board
   } catch (error: unknown) {

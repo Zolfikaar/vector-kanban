@@ -170,6 +170,8 @@ Run the suite: `npm run test`
 
 **Status: Planned**
 
+**Architectural baseline (done):** Board edits are **title-only** (`PATCH /api/boards/:id`). Column lifecycle (add / edit / delete) is isolated to dedicated UI flows and `/api/columns` endpoints. See **[ROADMAP.md](./ROADMAP.md)** for the next board-centric expansion track (metadata, collaboration, styling, audit log).
+
 High-value enhancements beyond the production core:
 
 - [ ] Implement **Realtime Synchronization** using Supabase Replication Channels.
